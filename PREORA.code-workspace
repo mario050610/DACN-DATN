@@ -1,0 +1,13 @@
+{
+  "folders": [
+    { "path": "frontend", "name": "PREORA Frontend" },
+    { "path": "backend", "name": "PREORA Backend" },
+    { "path": "ai-service", "name": "PREORA AI" },
+    { "path": "database", "name": "PREORA Database" },
+    { "path": "docs", "name": "PREORA Docs" }
+  ],
+  "settings": {
+    "files.exclude": { "**/__pycache__": true, "**/node_modules": true },
+    "editor.formatOnSave": true
+  }
+}

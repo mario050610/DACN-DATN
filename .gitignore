@@ -1,0 +1,31 @@
+# JS / frontend
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+.pnpm-store/
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+*.egg-info/
+# Runtime / config
+.env
+.env.*
+!.env.example
+*.log
+logs/
+tmp/*
+!tmp/.gitkeep
+.coverage
+htmlcov/
+# OS and editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json

@@ -1,0 +1,39 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-preora}
+      POSTGRES_USER: ${POSTGRES_USER:-preora}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-preora_local_dev_only}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/001_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-preora} -d ${POSTGRES_DB:-preora}"]
+      interval: 5s
+      retries: 10
+      timeout: 3s
+  ai-service:
+    build: ./ai-service
+    environment:
+      PYTHONUNBUFFERED: "1"
+    ports:
+      - "127.0.0.1:8001:8001"
+  backend:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-preora}:${POSTGRES_PASSWORD:-preora_local_dev_only}@db:5432/${POSTGRES_DB:-preora}
+      AI_SERVICE_URL: http://ai-service:8001
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+    ports:
+      - "127.0.0.1:8000:8000"
+volumes:
+  pgdata:
