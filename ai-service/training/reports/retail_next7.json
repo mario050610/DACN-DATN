@@ -1,0 +1,76 @@
+{
+  "trained_utc": "2026-10-16T13:35:00.164870+00:00",
+  "task": "retail_next7",
+  "target": "next7",
+  "features": [
+    "quantity_today",
+    "price",
+    "last7",
+    "last28",
+    "weekday",
+    "month",
+    "observed_days_last7",
+    "observed_days_last28",
+    "product_id"
+  ],
+  "source_domain_only": true,
+  "notes": [
+    "UCI recorded gross sales for next 7 days; NOT campaign final quantities or unconstrained demand.",
+    "Top product cohort selected on training period only. Same products may occur in future test periods.",
+    "Target is recorded gross sales only. Missing records contribute zero recorded sales, not proven zero demand. Global past-day coverage features are included in cleaned mode; stockouts/listing availability remain unknown.",
+    "Exact duplicate lines removed; some may represent genuine identical purchases.",
+    "7-day labels are purged at temporal boundaries; no customer identifiers are exported."
+  ],
+  "candidates": [
+    {
+      "max_leaf_nodes": 7,
+      "validation": {
+        "mae": 140.1754198002046,
+        "rmse": 303.84778553410104,
+        "wape": 0.5895250318190303
+      }
+    },
+    {
+      "max_leaf_nodes": 15,
+      "validation": {
+        "mae": 139.29880763312622,
+        "rmse": 298.22856747606744,
+        "wape": 0.5858383311376525
+      }
+    }
+  ],
+  "selected_max_leaf_nodes": 15,
+  "split_counts": {
+    "train": 5738,
+    "validation": 1600,
+    "test": 2200
+  },
+  "evaluation": {
+    "validation": {
+      "model": {
+        "mae": 139.29880763312622,
+        "rmse": 298.22856747606744,
+        "wape": 0.5858383311376525
+      },
+      "baseline": {
+        "mae": 178.28125,
+        "rmse": 372.7558483779966,
+        "wape": 0.7497838046698191
+      }
+    },
+    "test": {
+      "model": {
+        "mae": 144.25953792801695,
+        "rmse": 313.2615009776359,
+        "wape": 0.5383996556940669
+      },
+      "baseline": {
+        "mae": 186.22727272727272,
+        "rmse": 380.54410328561727,
+        "wape": 0.6950299505828107
+      }
+    }
+  },
+  "test_beats_baseline": true,
+  "artifact_sha256": "c230b101a2823d8a5da607eae7046337ac79146160e19ef04f088b9ab7083b18"
+}

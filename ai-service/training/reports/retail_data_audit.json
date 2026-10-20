@@ -1,0 +1,11 @@
+{
+  "raw_rows": 1067371,
+  "exact_duplicates_removed": 34335,
+  "clean_positive_sales_rows": 1003213,
+  "selected_products": 100,
+  "selection": "top quantities using training period only",
+  "excluded_non_sales_rows": 29823,
+  "cleaned_inputs": true,
+  "train_cut": "2011-03-01 00:00:00",
+  "test_cut": "2011-07-01 00:00:00"
+}

@@ -29,3 +29,13 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
+
+# Persistent account data: passwords, sessions and 2FA secrets
+backend/data/
+*.sqlite3
+*.sqlite3-*
+
+# Downloaded training data and locally trained artifacts
+ai-service/data/raw/
+ai-service/data/processed/
+ai-service/model_artifacts/research/

@@ -1,0 +1,8 @@
+﻿export type TrainingEvent = { created: number; stage: string; progress: number; status: string };
+export default function TrainingTimeline({ events = [], status }: { events?: TrainingEvent[]; status: string }) {
+  if (!events.length) return <p className="mt-4 text-xs leading-5 text-slate-500">Phiên cũ chưa lưu lịch sử từng bước. Trạng thái hiện tại vẫn hiển thị ở trên.</p>;
+  return <section aria-label="Các bước xử lý AI" className="mt-5 border-t border-slate-100 pt-4"><h3 className="text-sm font-semibold">{status==='succeeded'?'Các bước AI đã thực hiện':'AI đang xử lý như thế nào?'}</h3><p className="mt-1 text-xs leading-5 text-slate-500">Các mốc thực tế do worker ghi lại; phần trăm thể hiện mốc quy trình, không phải thời gian còn lại.</p><ol className="mt-4 space-y-3">{events.map((event,index)=>{
+    const active=index===events.length-1 && (status==='running'||status==='queued');
+    return <li key={`${event.created}-${index}`} className="flex gap-3"><span className={`mt-0.5 grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-semibold ${event.status==='failed'?'bg-rose-100 text-rose-700':active?'animate-pulse bg-teal-600 text-white':'bg-teal-50 text-teal-700'}`}>{event.status==='failed'?'!':index+1}</span><div className="min-w-0"><p className={`text-sm ${active?'font-semibold text-teal-800':'text-slate-600'}`}>{event.stage}</p><p className="mt-1 text-xs text-slate-400">{new Date(event.created*1000).toLocaleTimeString('vi-VN')} · Mốc {event.progress}%{active?' · Đang thực hiện':''}</p></div></li>;
+  })}</ol>{status==='failed'&&<p className="mt-3 text-xs font-semibold text-rose-700">Phiên đã dừng vì lỗi; xem thông báo và nhật ký bên trên.</p>}</section>;
+}

@@ -1,0 +1,11 @@
+{
+  "validation_start": "2023-09-21 00:00:00",
+  "test_start": "2025-04-03 00:00:00",
+  "purged_samples": 4118,
+  "files": 989,
+  "raw_rows": 3110323,
+  "unique_ids": 269321,
+  "rows_not_in_latest_view": 2841002,
+  "cleaned_inputs": true,
+  "samples_used": 242247
+}

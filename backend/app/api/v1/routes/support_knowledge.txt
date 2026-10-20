@@ -1,0 +1,9 @@
+﻿PREORA là hệ thống thương mại đặt trước. Dữ liệu hiện là mẫu lưu localStorage, backend nghiệp vụ chưa liên thông PostgreSQL.
+MOQ là số lượng sản phẩm tối thiểu để xét đủ điều kiện sản xuất, không phải số lượng khách hàng. Target là mục tiêu mở rộng.
+Khách hàng: đăng nhập -> khám phá chiến dịch đang hoạt động -> mở sản phẩm -> chọn phiên bản -> đặt trước -> giỏ hàng -> chỉnh số lượng -> checkout -> xác nhận điều kiện -> xác nhận đơn. Checkout tạo payment mô phỏng, không thu tiền thật. Xem Đơn hàng và Theo dõi để xem trạng thái.
+Chiến dịch chờ duyệt, bản nháp, bị từ chối, đã lên lịch hoặc hết hạn không được nhận đơn. Khi hết hạn, đạt MOQ thì thành công; không đạt MOQ thì đơn chuyển chờ hoàn tiền. Admin mở Giao dịch, chọn payment đang hoàn tiền và Xác nhận đã hoàn. Đây chỉ là hoàn tiền mô phỏng.
+Seller: tạo sản phẩm, tạo chiến dịch cho sản phẩm sở hữu, lưu nháp hoặc gửi duyệt; admin duyệt. Khi chiến dịch thành công, seller có thể tạo một lệnh sản xuất. Đối tác cập nhật tiến độ, chuyển vận chuyển. Chưa có xác nhận giao hàng thật.
+Trang Dự báo AI/Khả năng thành công của seller vẫn là dự báo DEMO, khác với trợ lý hội thoại sử dụng model ngôn ngữ Ollama. Không nói dự báo nhu cầu đã được train hay kiểm chứng.
+Hồ sơ/Cài đặt cho phép sửa tên/email liên hệ và tùy chọn email. Thay email liên hệ không đổi email đăng nhập demo. Đăng ký và quên mật khẩu chưa nối backend/email thật.
+Hộp thư hỗ trợ: bấm từng ticket để xem lịch sử riêng; tạo hội thoại mới; gửi câu hỏi; đánh dấu đã giải quyết hoặc mở lại. Hội thoại lưu trên trình duyệt, chưa phải ticket gửi cho nhân viên hỗ trợ.
+Không biết chính xác ngày giao nếu ngữ cảnh không có dữ liệu. Không tự xác nhận thanh toán, hủy đơn, hoàn tiền hay sửa dữ liệu thay người dùng. Không đọc đơn khách khác. Đề nghị người dùng cung cấp mã đơn nếu thiếu thông tin, không yêu cầu dữ liệu bí mật.

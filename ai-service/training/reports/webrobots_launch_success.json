@@ -1,0 +1,79 @@
+{
+  "trained_utc": "2026-10-16T13:36:48.125223+00:00",
+  "task": "webrobots_launch_success",
+  "target": "success",
+  "features": [
+    "duration",
+    "launch_month",
+    "log_goal",
+    "category",
+    "currency",
+    "country"
+  ],
+  "source_domain_only": true,
+  "notes": [
+    "Retrospective launch-metadata benchmark; not a daily-history forecast or PREORA MOQ model.",
+    "No pledged/backers/percent_funded/spotlight/state_changed_at input. State is label only.",
+    "Goal/category are from scraped snapshots; edits after launch cannot be ruled out.",
+    "Deduplicated across all shards/snapshots before project-disjoint temporal split.",
+    "Source coverage is incomplete; canceled/live/suspended projects are excluded."
+  ],
+  "candidates": [
+    {
+      "max_leaf_nodes": 7,
+      "validation": {
+        "f1": 0.865584079449376,
+        "roc_auc": 0.8084717128766004,
+        "brier": 0.1502696321060437,
+        "positive_rate": 0.7094604389550897
+      }
+    },
+    {
+      "max_leaf_nodes": 15,
+      "validation": {
+        "f1": 0.8625282734355366,
+        "roc_auc": 0.7906460185143687,
+        "brier": 0.15176021148875268,
+        "positive_rate": 0.7094604389550897
+      }
+    }
+  ],
+  "selected_max_leaf_nodes": 7,
+  "split_counts": {
+    "train": 170746,
+    "validation": 34491,
+    "test": 37010
+  },
+  "evaluation": {
+    "validation": {
+      "model": {
+        "f1": 0.865584079449376,
+        "roc_auc": 0.8084717128766004,
+        "brier": 0.1502696321060437,
+        "positive_rate": 0.7094604389550897
+      },
+      "baseline": {
+        "f1": 0.8300401960618036,
+        "roc_auc": 0.5,
+        "brier": 0.22299520224525654,
+        "positive_rate": 0.7094604389550897
+      }
+    },
+    "test": {
+      "model": {
+        "f1": 0.8720156285116609,
+        "roc_auc": 0.790650643127334,
+        "brier": 0.14975049787584963,
+        "positive_rate": 0.7338827343961092
+      },
+      "baseline": {
+        "f1": 0.846519455828957,
+        "roc_auc": 0.5,
+        "brier": 0.21910814017115152,
+        "positive_rate": 0.7338827343961092
+      }
+    }
+  },
+  "test_beats_baseline": true,
+  "artifact_sha256": "081b5563e78ad774c87ac1a5fb2b01501111f22a7bdadc5495fe8b796a79648b"
+}

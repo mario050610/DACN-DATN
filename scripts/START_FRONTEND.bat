@@ -8,9 +8,9 @@ if errorlevel 1 (
  exit /b 1
 )
 if not exist "node_modules" (
- echo Installing frontend dependencies (first run requires Internet)...
+ echo Installing frontend dependencies - first run requires Internet...
  call npm install
  if errorlevel 1 (pause & exit /b 1)
 )
-call npm run dev
+call npm run dev -- --host 127.0.0.1 --port 5173 --strictPort
 if errorlevel 1 pause

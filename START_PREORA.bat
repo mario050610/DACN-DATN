@@ -1,2 +1,2 @@
 @echo off
-call "%~dp0scripts\START_FRONTEND.bat"
+call "%~dp0START_PREORA_WITH_AI.bat"

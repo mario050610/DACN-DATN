@@ -1,5 +1,24 @@
 # PREORA — Draft API Contracts
 
+## Hiện trạng API (19/10/2026)
+
+Phần draft phía dưới là hợp đồng thiết kế ban đầu, không phải danh sách đầy đủ endpoint đang chạy. Swagger `/docs` từ backend là hợp đồng runtime.
+
+| Endpoint | Hiện trạng |
+|---|---|
+| `/api/auth/*`, `/api/admin/users` | Auth/session/2FA và tra cứu admin đã có; persistence SQLite |
+| `/api/shopping/*` | Shopping theo tài khoản, checkout mô phỏng; không thanh toán thật |
+| `POST/GET /api/admin/ai-training`, `GET /api/admin/ai-training/{id}` | Admin tạo/poll job; backend chạy worker, lưu result/artifact/log theo job |
+| `/api/admin/ai-training/datasets`, `/dataset-template` | Nhập/list dataset hoặc tải schema cho full model |
+| `POST /api/analytics/events`, `GET /api/analytics/campaigns/{id}` | Ghi view/click và admin xem số đếm; favorite/cart ghi từ shopping |
+| `GET /api/ai/campaigns/{id}/latest` | Admin hoặc seller sở hữu đọc kết quả full đã lưu; không inference mới |
+| `POST /api/ai/chat` | Ollama support chat, độc lập forecasting |
+| `POST /api/ai/forecast`, `/api/ai/predict-success` | Proxy HTTP tới 8001; loader chưa tích hợp nên 503; không phải luồng train web |
+
+Chi tiết [kiến trúc](ARCHITECTURE.md), [nguồn dữ liệu](DATA_PROVENANCE.md), [quyền](ROLE_MAPPING.md).
+
+---
+
 **Quy ước đề xuất (CHƯA HOÀN THÀNH):** JSON camelCase cho frontend; DB snake_case; timestamps ISO 8601 UTC; `campaignId` là định danh duy nhất.
 
 ## Đã có endpoint khung

@@ -1,0 +1,13 @@
+{
+  "validation_start": "2014-03-28 00:00:00",
+  "test_start": "2014-05-02 00:00:00",
+  "purged_samples": 22327,
+  "projects_read": 18073,
+  "history_rows": 544929,
+  "matched_history_projects": 18073,
+  "cleaned_inputs": true,
+  "sample_count": 26467,
+  "campaigns_used": 9801,
+  "validation_fraction": 0.6,
+  "test_fraction": 0.85
+}

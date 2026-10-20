@@ -33,7 +33,14 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-preora}:${POSTGRES_PASSWORD:-preora_local_dev_only}@db:5432/${POSTGRES_DB:-preora}
       AI_SERVICE_URL: http://ai-service:8001
       CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      OLLAMA_URL: ${OLLAMA_DOCKER_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:8b}
+      AUTH_DATABASE_PATH: /app/data/accounts.sqlite3
+      AUTH_COOKIE_SECURE: ${AUTH_COOKIE_SECURE:-false}
     ports:
       - "127.0.0.1:8000:8000"
+    volumes:
+      - authdata:/app/data
 volumes:
   pgdata:
+  authdata:

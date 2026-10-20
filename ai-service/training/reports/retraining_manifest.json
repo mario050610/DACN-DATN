@@ -1,0 +1,22 @@
+{
+  "trained_utc": "2026-10-16T13:36:49.849526+00:00",
+  "cleaned_inputs": true,
+  "command": "ai-service/.venv/Scripts/python.exe -u -X utf8 ai-service/training/train.py --dataset all --cleaned",
+  "inputs": {
+    "retail_sales.csv": "6c24ff0f69ec30674d847ccd857d65c90a370e510e3f3ec606d82b30fbc3c41e",
+    "vt_projects.csv": "e16b89ff00d33fec7c6513121773e8b289c1f5ec3a8e6fd3a7925d302bd20bc8",
+    "vt_history_daily.csv": "8846123350bfed81455f492882b2054d54857430963318d2396a4b4de60e7ea0",
+    "webrobots_latest.csv": "fe1d2d953934877321bfe5710aa4385a8502ef9b5ce16805f57a5747bf7c88f4",
+    "cleaning_report.json": "bfbb55033837818b6375312349b90fcd726fa95dca7b7922e874fef24addec2a",
+    "daily_gap_report.json": "220f915c120dbf084fa9ee0b6b539e32b0ff6f5ad77c106f601ada9d7c8c13fb"
+  },
+  "artifacts": {
+    "retail_next7": "c230b101a2823d8a5da607eae7046337ac79146160e19ef04f088b9ab7083b18",
+    "vt_campaign_success": "6c99ae15f9e625a50c684cedf886267f240b42d9a90914dad159303f9ebf5387",
+    "webrobots_launch_success": "081b5563e78ad774c87ac1a5fb2b01501111f22a7bdadc5495fe8b796a79648b"
+  },
+  "verification": "10 tests passed: persisted predictions, temporal/group separation, metric recomputation, gap handling",
+  "backup": "tmp/retraining_backup/20261016_203445",
+  "research_only": true,
+  "deployed_to_campaign_ui": false
+}

@@ -1,0 +1,251 @@
+{
+  "created_utc": "2026-10-16T13:36:49.849526+00:00",
+  "python_seed": 42,
+  "versions": {
+    "pandas": "2.3.3",
+    "numpy": "2.4.6",
+    "sklearn": "1.9.1"
+  },
+  "research_only": true,
+  "results": {
+    "retail": {
+      "trained_utc": "2026-10-16T13:35:00.164870+00:00",
+      "task": "retail_next7",
+      "target": "next7",
+      "features": [
+        "quantity_today",
+        "price",
+        "last7",
+        "last28",
+        "weekday",
+        "month",
+        "observed_days_last7",
+        "observed_days_last28",
+        "product_id"
+      ],
+      "source_domain_only": true,
+      "notes": [
+        "UCI recorded gross sales for next 7 days; NOT campaign final quantities or unconstrained demand.",
+        "Top product cohort selected on training period only. Same products may occur in future test periods.",
+        "Target is recorded gross sales only. Missing records contribute zero recorded sales, not proven zero demand. Global past-day coverage features are included in cleaned mode; stockouts/listing availability remain unknown.",
+        "Exact duplicate lines removed; some may represent genuine identical purchases.",
+        "7-day labels are purged at temporal boundaries; no customer identifiers are exported."
+      ],
+      "candidates": [
+        {
+          "max_leaf_nodes": 7,
+          "validation": {
+            "mae": 140.1754198002046,
+            "rmse": 303.84778553410104,
+            "wape": 0.5895250318190303
+          }
+        },
+        {
+          "max_leaf_nodes": 15,
+          "validation": {
+            "mae": 139.29880763312622,
+            "rmse": 298.22856747606744,
+            "wape": 0.5858383311376525
+          }
+        }
+      ],
+      "selected_max_leaf_nodes": 15,
+      "split_counts": {
+        "train": 5738,
+        "validation": 1600,
+        "test": 2200
+      },
+      "evaluation": {
+        "validation": {
+          "model": {
+            "mae": 139.29880763312622,
+            "rmse": 298.22856747606744,
+            "wape": 0.5858383311376525
+          },
+          "baseline": {
+            "mae": 178.28125,
+            "rmse": 372.7558483779966,
+            "wape": 0.7497838046698191
+          }
+        },
+        "test": {
+          "model": {
+            "mae": 144.25953792801695,
+            "rmse": 313.2615009776359,
+            "wape": 0.5383996556940669
+          },
+          "baseline": {
+            "mae": 186.22727272727272,
+            "rmse": 380.54410328561727,
+            "wape": 0.6950299505828107
+          }
+        }
+      },
+      "test_beats_baseline": true,
+      "artifact_sha256": "c230b101a2823d8a5da607eae7046337ac79146160e19ef04f088b9ab7083b18"
+    },
+    "vt": {
+      "trained_utc": "2026-10-16T13:36:34.663449+00:00",
+      "task": "vt_campaign_success",
+      "target": "success",
+      "features": [
+        "elapsed",
+        "remaining",
+        "log_goal",
+        "funding_ratio",
+        "log_funders",
+        "observation_age",
+        "category",
+        "currency"
+      ],
+      "source_domain_only": true,
+      "notes": [
+        "Predicts Kickstarter funding success, NOT PREORA MOQ success.",
+        "Snapshots at day 7/14/21 use historical observations strictly before forecast time.",
+        "No final pledged/backers/state features. Labels use terminal successful/failed state only.",
+        "Project-disjoint time split; training outcomes end before validation launch boundary.",
+        "Metadata category/goal may have been edited; historical immutability cannot be proven from these files.",
+        "Canceled/suspended projects excluded; reported metrics do not cover these outcomes."
+      ],
+      "candidates": [
+        {
+          "max_leaf_nodes": 7,
+          "validation": {
+            "f1": 0.8994594594594595,
+            "roc_auc": 0.9678125123973499,
+            "brier": 0.07407128925633288,
+            "positive_rate": 0.5226881102814475
+          }
+        },
+        {
+          "max_leaf_nodes": 15,
+          "validation": {
+            "f1": 0.8987547374120195,
+            "roc_auc": 0.9678872270930032,
+            "brier": 0.07373964896920235,
+            "positive_rate": 0.5226881102814475
+          }
+        }
+      ],
+      "selected_max_leaf_nodes": 15,
+      "split_counts": {
+        "train": 17568,
+        "validation": 1741,
+        "test": 7158
+      },
+      "evaluation": {
+        "validation": {
+          "model": {
+            "f1": 0.8987547374120195,
+            "roc_auc": 0.9678872270930032,
+            "brier": 0.07373964896920235,
+            "positive_rate": 0.5226881102814475
+          },
+          "baseline": {
+            "f1": 0.6865333836288193,
+            "roc_auc": 0.5,
+            "brier": 0.2496248691670311,
+            "positive_rate": 0.5226881102814475
+          }
+        },
+        "test": {
+          "model": {
+            "f1": 0.9016553067185978,
+            "roc_auc": 0.9690692199382215,
+            "brier": 0.07040163163958296,
+            "positive_rate": 0.5033528918692373
+          },
+          "baseline": {
+            "f1": 0.6696403679955395,
+            "roc_auc": 0.5,
+            "brier": 0.2500452957058212,
+            "positive_rate": 0.5033528918692373
+          }
+        }
+      },
+      "test_beats_baseline": true,
+      "artifact_sha256": "6c99ae15f9e625a50c684cedf886267f240b42d9a90914dad159303f9ebf5387"
+    },
+    "webrobots": {
+      "trained_utc": "2026-10-16T13:36:48.125223+00:00",
+      "task": "webrobots_launch_success",
+      "target": "success",
+      "features": [
+        "duration",
+        "launch_month",
+        "log_goal",
+        "category",
+        "currency",
+        "country"
+      ],
+      "source_domain_only": true,
+      "notes": [
+        "Retrospective launch-metadata benchmark; not a daily-history forecast or PREORA MOQ model.",
+        "No pledged/backers/percent_funded/spotlight/state_changed_at input. State is label only.",
+        "Goal/category are from scraped snapshots; edits after launch cannot be ruled out.",
+        "Deduplicated across all shards/snapshots before project-disjoint temporal split.",
+        "Source coverage is incomplete; canceled/live/suspended projects are excluded."
+      ],
+      "candidates": [
+        {
+          "max_leaf_nodes": 7,
+          "validation": {
+            "f1": 0.865584079449376,
+            "roc_auc": 0.8084717128766004,
+            "brier": 0.1502696321060437,
+            "positive_rate": 0.7094604389550897
+          }
+        },
+        {
+          "max_leaf_nodes": 15,
+          "validation": {
+            "f1": 0.8625282734355366,
+            "roc_auc": 0.7906460185143687,
+            "brier": 0.15176021148875268,
+            "positive_rate": 0.7094604389550897
+          }
+        }
+      ],
+      "selected_max_leaf_nodes": 7,
+      "split_counts": {
+        "train": 170746,
+        "validation": 34491,
+        "test": 37010
+      },
+      "evaluation": {
+        "validation": {
+          "model": {
+            "f1": 0.865584079449376,
+            "roc_auc": 0.8084717128766004,
+            "brier": 0.1502696321060437,
+            "positive_rate": 0.7094604389550897
+          },
+          "baseline": {
+            "f1": 0.8300401960618036,
+            "roc_auc": 0.5,
+            "brier": 0.22299520224525654,
+            "positive_rate": 0.7094604389550897
+          }
+        },
+        "test": {
+          "model": {
+            "f1": 0.8720156285116609,
+            "roc_auc": 0.790650643127334,
+            "brier": 0.14975049787584963,
+            "positive_rate": 0.7338827343961092
+          },
+          "baseline": {
+            "f1": 0.846519455828957,
+            "roc_auc": 0.5,
+            "brier": 0.21910814017115152,
+            "positive_rate": 0.7338827343961092
+          }
+        }
+      },
+      "test_beats_baseline": true,
+      "artifact_sha256": "081b5563e78ad774c87ac1a5fb2b01501111f22a7bdadc5495fe8b796a79648b"
+    }
+  },
+  "cleaned_inputs": true,
+  "input_manifest": "retraining_manifest.json"
+}

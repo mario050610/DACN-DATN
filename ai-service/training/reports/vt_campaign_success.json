@@ -1,0 +1,82 @@
+{
+  "trained_utc": "2026-10-16T13:36:34.663449+00:00",
+  "task": "vt_campaign_success",
+  "target": "success",
+  "features": [
+    "elapsed",
+    "remaining",
+    "log_goal",
+    "funding_ratio",
+    "log_funders",
+    "observation_age",
+    "category",
+    "currency"
+  ],
+  "source_domain_only": true,
+  "notes": [
+    "Predicts Kickstarter funding success, NOT PREORA MOQ success.",
+    "Snapshots at day 7/14/21 use historical observations strictly before forecast time.",
+    "No final pledged/backers/state features. Labels use terminal successful/failed state only.",
+    "Project-disjoint time split; training outcomes end before validation launch boundary.",
+    "Metadata category/goal may have been edited; historical immutability cannot be proven from these files.",
+    "Canceled/suspended projects excluded; reported metrics do not cover these outcomes."
+  ],
+  "candidates": [
+    {
+      "max_leaf_nodes": 7,
+      "validation": {
+        "f1": 0.8994594594594595,
+        "roc_auc": 0.9678125123973499,
+        "brier": 0.07407128925633288,
+        "positive_rate": 0.5226881102814475
+      }
+    },
+    {
+      "max_leaf_nodes": 15,
+      "validation": {
+        "f1": 0.8987547374120195,
+        "roc_auc": 0.9678872270930032,
+        "brier": 0.07373964896920235,
+        "positive_rate": 0.5226881102814475
+      }
+    }
+  ],
+  "selected_max_leaf_nodes": 15,
+  "split_counts": {
+    "train": 17568,
+    "validation": 1741,
+    "test": 7158
+  },
+  "evaluation": {
+    "validation": {
+      "model": {
+        "f1": 0.8987547374120195,
+        "roc_auc": 0.9678872270930032,
+        "brier": 0.07373964896920235,
+        "positive_rate": 0.5226881102814475
+      },
+      "baseline": {
+        "f1": 0.6865333836288193,
+        "roc_auc": 0.5,
+        "brier": 0.2496248691670311,
+        "positive_rate": 0.5226881102814475
+      }
+    },
+    "test": {
+      "model": {
+        "f1": 0.9016553067185978,
+        "roc_auc": 0.9690692199382215,
+        "brier": 0.07040163163958296,
+        "positive_rate": 0.5033528918692373
+      },
+      "baseline": {
+        "f1": 0.6696403679955395,
+        "roc_auc": 0.5,
+        "brier": 0.2500452957058212,
+        "positive_rate": 0.5033528918692373
+      }
+    }
+  },
+  "test_beats_baseline": true,
+  "artifact_sha256": "6c99ae15f9e625a50c684cedf886267f240b42d9a90914dad159303f9ebf5387"
+}
