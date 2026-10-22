@@ -1,4 +1,4 @@
-﻿"""Persistent training jobs shared by the web backend and its isolated ML worker."""
+"""Persistent training jobs shared by the web backend and its isolated ML worker."""
 import json
 import os
 import sqlite3
@@ -80,3 +80,8 @@ def latest_full_campaign(campaign_id):
     with database() as db:
         row=db.execute("SELECT * FROM jobs WHERE status='succeeded' AND json_extract(request,'$.campaignId')=? AND json_extract(result,'$.modelType')='campaign_full' ORDER BY created DESC LIMIT 1",(campaign_id,)).fetchone()
         return serialize(row)
+
+
+def recent_for_owner(owner_id):
+    with database() as db:
+        return [serialize(row) for row in db.execute("SELECT * FROM jobs WHERE json_extract(request,'$.ownerId')=? ORDER BY created DESC LIMIT 20",(owner_id,))]

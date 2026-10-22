@@ -1,4 +1,4 @@
-﻿"""Full campaign feature contract, validated training CSV, and constrained production planning."""
+"""Full campaign feature contract, validated training CSV, and constrained production planning."""
 import csv
 import io
 import json
@@ -96,7 +96,7 @@ def ingest_csv(content,name,provenance):
     output=io.StringIO();writer=csv.DictWriter(output,fieldnames=rows[0].keys());writer.writeheader();writer.writerows(rows)
     (folder/'samples.csv').write_text(output.getvalue(),encoding='utf-8')
     metadata={'id':dataset_id,'name':name,'provenance':provenance,'rows':len(rows),'campaigns':len(outcomes),'synthetic':False,
-              'sourceStatement':'Do quản trị viên cung cấp; chưa xác minh độc lập nguồn dữ liệu.'}
+              'sourceStatement':'Do người vận hành cung cấp; chưa xác minh độc lập nguồn dữ liệu.'}
     (folder/'metadata.json').write_text(json.dumps(metadata,ensure_ascii=False),encoding='utf-8')
     return metadata
 

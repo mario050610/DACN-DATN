@@ -76,3 +76,7 @@ Các module trong sơ đồ là trách nhiệm logic; chưa khẳng định là 
 - [API hiện tại và thiết kế](API_CONTRACT.md)
 - [Huấn luyện trên web](HUAN_LUYEN_AI_TREN_WEB.md)
 - [Làm sạch dữ liệu](LAM_SACH_DU_LIEU_AI.md)
+
+### Trang sản xuất và quyền AI theo vai trò (21/10/2026)
+
+Chi tiết trong [SAN_XUAT_VA_AI_THEO_VAI_TRO.md](SAN_XUAT_VA_AI_THEO_VAI_TRO.md). Partner được tách tổng quan/tiếp nhận/cập nhật tiến độ. Customer, seller và admin có trang theo dõi cùng lệnh theo phạm vi tài khoản. Dữ liệu sản xuất vẫn ở trình duyệt; sự kiện storage đồng bộ tab cùng origin, chưa đồng bộ đa thiết bị. Seller có API riêng và có thể vận hành huấn luyện cho chiến dịch của mình; dataset và phiên riêng được lọc ở backend.

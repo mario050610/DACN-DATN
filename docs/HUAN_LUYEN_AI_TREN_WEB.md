@@ -112,3 +112,7 @@ Huấn luyện chạy `backend → jobs SQLite → Python worker`, không đi qu
 ## Đơn hàng mẫu theo ngày
 
 Campaign mẫu có lịch sử phân bổ theo ngày và profile tăng tự động; PR-SIM là đơn/phần thanh toán mô phỏng. Admin có nút tiến ngày và bật/tắt trên trang train. Đây không phải dữ liệu thị trường; xem [cơ chế và giới hạn](MO_PHONG_DON_HANG.md).
+
+## Seller huấn luyện và theo dõi sản xuất
+
+Seller → Dự báo AI nay dùng cùng quy trình huấn luyện với admin cho chiến dịch thuộc cửa hàng. Seller nhập CSV riêng, cấu hình snapshot, khởi chạy worker, xem tiến trình và kết quả. Xem [quyền và luồng theo tài khoản](SAN_XUAT_VA_AI_THEO_VAI_TRO.md) để biết phạm vi dữ liệu và các trang sản xuất.

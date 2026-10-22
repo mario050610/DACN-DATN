@@ -25,3 +25,6 @@ app.include_router(training_router, prefix='/api')
 
 from app.api.v1.routes.analytics import router as analytics_router
 app.include_router(analytics_router, prefix='/api')
+
+from app.api.v1.routes.seller_training import router as seller_training_router
+app.include_router(seller_training_router, prefix='/api')

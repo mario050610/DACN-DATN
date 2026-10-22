@@ -1,4 +1,4 @@
-﻿"""Admin-only local training launcher. No shell commands or paths from client input."""
+"""Admin-only local training launcher. No shell commands or paths from client input."""
 import re
 import sqlite3
 import subprocess
@@ -96,12 +96,17 @@ def list_jobs(response:Response):
 
 @router.post('',status_code=202,dependencies=[Depends(admin),Depends(origin_guard)])
 def start_training(payload:TrainingRequest):
+    return create_training(payload)
+
+
+def create_training(payload:TrainingRequest, owner_id=None):
     if payload.mode=='retail' and not (ROOT/'ai-service/data/raw/uci/online_retail_II.xlsx').is_file():
         raise HTTPException(409,'Thiếu dữ liệu UCI trong ai-service/data/raw/uci/.')
     if payload.mode=='campaign_history':
         try: full.dataset(payload.datasetId or '')
         except ValueError as cause: raise HTTPException(409,str(cause))
     snapshot=payload.model_dump(mode='json')
+    if owner_id is not None: snapshot['ownerId']=owner_id
     snapshot['computedFeatures']=full.snapshot_features(snapshot)
     try: job_id=jobs.create(snapshot)
     except sqlite3.IntegrityError:

@@ -36,9 +36,10 @@ def latest_campaign_model(campaign_id: str, request: Request, response: Response
     response.headers['Cache-Control']='no-store'
     with database() as db:
         user=current_user(db,request)
-        campaign=CAMPAIGNS.get(campaign_id)
-        if user['role']!='admin' and not (user['role']=='seller' and campaign and campaign['sellerId']==user['id']):
-            raise HTTPException(403,'Bạn không có quyền xem dự báo chiến dịch này.')
+        if user['role']!='admin':
+            if user['role']!='seller':raise HTTPException(403,'Campaign access denied.')
+            from .seller_training import owns_campaign
+            owns_campaign(user['id'],campaign_id)
     job=training_jobs.latest_full_campaign(campaign_id)
     if not job:raise HTTPException(404,'Chưa có kết quả full cho chiến dịch này. Quản trị viên cần huấn luyện trước.')
     return {'jobId':job['id'],'created':job['created'],'result':job['result']}

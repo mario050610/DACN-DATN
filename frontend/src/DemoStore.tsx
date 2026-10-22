@@ -2,7 +2,7 @@ import { encodeStoredDemoState, decodeStoredDemoState } from './demoStateStorage
 import { seedDailyHistory, advanceDemoSales, addOrdersToHistory, type SalesSimulation } from './demoSalesSimulation';
 import catalogue from "./data/catalogue.json";
 import { authApi, type Account } from "./services/authApi";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { demoForecastApi } from "./services/forecastApi";
 import { campaignIsOrderable, effectiveNow, evaluateCampaignOutcome, remainingDays } from "./services/businessRules";
 
@@ -80,6 +80,7 @@ export type StoreForecast = {
 };
 
 export type ProductionRequest = {
+  history?: { status: string; progress: number; at: string }[];
   id: string;
   campaignId: string;
   sellerId: string;
@@ -387,6 +388,7 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       return initialState;
     }
   });
+  const receivedStorage = useRef('');
   const [authLoading, setAuthLoading] = useState(true);
   const [persistenceError,setPersistenceError]=useState("");
   useEffect(() => {
@@ -395,7 +397,7 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     return () => { active = false; };
   }, []);
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, encodeStoredDemoState(state)); setPersistenceError(''); }
+    try { const encoded=encodeStoredDemoState({...state,session:null}); if(encoded!==receivedStorage.current && encoded!==localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY,encoded); receivedStorage.current=''; setPersistenceError(''); }
     catch { setPersistenceError('Không lưu được dữ liệu mô phỏng trong trình duyệt. Hãy xuất dữ liệu hoặc giải phóng bộ nhớ trước khi đóng trang.'); }
   }, [state]);
   useEffect(() => {
@@ -403,6 +405,22 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     const timer = window.setInterval(() => setState((current) => reconcileLifecycle(current)), 60_000);
     return () => window.clearInterval(timer);
   }, [state.demoNow]);
+
+  useEffect(() => {
+    const receive = (event: StorageEvent) => {
+      if (event.key !== STORAGE_KEY || !event.newValue || event.newValue !== localStorage.getItem(STORAGE_KEY)) return;
+      try {
+        const incoming = migrateState(decodeStoredDemoState(JSON.parse(event.newValue)));
+        setState(current => {
+          if (encodeStoredDemoState({...current,session:null}) === event.newValue) return current;
+          receivedStorage.current=event.newValue!;
+          return {...incoming,session:current.session};
+        });
+      } catch { /* Ignore invalid storage events; retain the current state. */ }
+    };
+    window.addEventListener('storage',receive);
+    return () => window.removeEventListener('storage',receive);
+  },[]);
 
   const value = useMemo<StoreValue>(() => ({
     state,
@@ -521,7 +539,7 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       if (state.session?.role !== "seller") return;
       setState((current) => {
         const campaign = current.campaigns.find((item) => item.id === campaignId);
-        if (!campaign || campaign.sellerId !== current.session?.userId || campaign.status !== "Thành công" || current.productionRequests.some((item) => item.campaignId === campaignId)) return current;
+        if (!campaign || campaign.sellerId !== current.session?.userId || campaign.status !== "Thành công" || campaign.currentOrders < campaign.moq || current.productionRequests.some((item) => item.campaignId === campaignId)) return current;
         const product = current.products.find((item) => item.id === campaign.productId);
         const completion = new Date(getEffectiveNow(current).getTime() + (product?.manufacturingDays || 30) * DAY);
         const request: ProductionRequest = { id: makeId("MFG"), campaignId, sellerId: campaign.sellerId, partnerId: "partner-demo", quantity: campaign.currentOrders, status: "Chờ tiếp nhận", progress: 0, estimatedCompletion: isoDay(completion), updatedAt: getEffectiveNow(current).toISOString() };
@@ -540,13 +558,13 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
           "Đang vận chuyển": ["Đang vận chuyển", "Hoàn thành"],
           "Hoàn thành": ["Hoàn thành"],
         };
-        if (!allowed[request.status].includes(status)) return current;
+        if (!allowed[request.status].includes(status) || !Number.isInteger(progress) || progress < request.progress || progress > 100) return current;
         if (status === "Đang vận chuyển" && progress < 100) return current;
-        const orderStatus = status === "Đang vận chuyển" || status === "Hoàn thành" ? "Đang vận chuyển" : "Đang sản xuất";
+        const orderStatus = status === "Hoàn thành" ? "Đã giao" : status === "Đang vận chuyển" ? "Đang vận chuyển" : "Đang sản xuất";
         return {
           ...current,
-          productionRequests: current.productionRequests.map((item) => item.id === id ? { ...item, progress: Math.max(item.progress, Math.min(progress, 100)), status, updatedAt: getEffectiveNow(current).toISOString() } : item),
-          orders: current.orders.map((order) => order.campaignId === request.campaignId ? { ...order, orderStatus } : order),
+          productionRequests: current.productionRequests.map((item) => item.id === id ? { ...item, progress: Math.max(item.progress, Math.min(progress, 100)), status, updatedAt: getEffectiveNow(current).toISOString(), history: [...(item.history || [{status:item.status,progress:item.progress,at:item.updatedAt}]),{status,progress,at:getEffectiveNow(current).toISOString()}] } : item),
+          orders: current.orders.map((order) => order.campaignId === request.campaignId && !["Đã hoàn tiền", "Đã hủy"].includes(order.orderStatus) ? { ...order, orderStatus } : order),
         };
       });
     },

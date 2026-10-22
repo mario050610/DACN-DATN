@@ -1,9 +1,10 @@
+import ProductionWorkspace from './ProductionWorkspace';
 import { useRecordParam, recordHref } from './dashboardRoutes';
 import CampaignForecastView from "./CampaignForecastView";
 import { recordBehavior } from "./services/behaviorApi";
 import AdminAITraining from "./AdminAITraining";
 import PublicInformation from "./PublicInformation";
-import { AdminUsers, SellerVerification, Disputes, Analytics, Finance, CustomerOverview, SellerOrders, ProductionWork, BusinessProfile, PlatformSettings, RelevantNotifications, SellerProducts, ActivityTrend, notificationItems, CampaignInspection } from "./DashboardPages";
+import { AdminUsers, SellerVerification, Disputes, Analytics, Finance, CustomerOverview, SellerOrders, BusinessProfile, PlatformSettings, RelevantNotifications, SellerProducts, ActivityTrend, notificationItems, CampaignInspection } from "./DashboardPages";
 import ProductGallery from "./ProductGallery";
 import { useShopping } from "./ShoppingStore";
 import { CommerceCart, CommerceCheckout, VoucherPage } from "./Commerce";
@@ -79,7 +80,7 @@ function toUiProduct(product: StoreProduct, campaign: StoreCampaign, state: Demo
 
 const navByRole: Record<Role, { label: string; path: string }[]> = {
   customer: [
-    { label: "Khám phá sản phẩm", path: "customer-home" }, { label: "Tổng quan", path: "account" }, { label: "Đơn hàng", path: "orders" }, { label: "Yêu thích", path: "wishlist" }, { label: "Giỏ hàng", path: "cart" }, { label: "Kho ưu đãi", path: "vouchers" },
+    { label: "Khám phá sản phẩm", path: "customer-home" }, { label: "Tổng quan", path: "account" }, { label: "Tiến độ sản xuất", path: "customer-production" }, { label: "Đơn hàng", path: "orders" }, { label: "Yêu thích", path: "wishlist" }, { label: "Giỏ hàng", path: "cart" }, { label: "Kho ưu đãi", path: "vouchers" },
     { label: "Thông báo", path: "notifications" }, { label: "Trung tâm trợ giúp", path: "customer-help" }, { label: "Hộp thư hỗ trợ", path: "customer-support" },
     { label: "Hướng dẫn sử dụng", path: "customer-guide" }, { label: "Hồ sơ", path: "profile" },
   ],
@@ -92,7 +93,7 @@ const navByRole: Record<Role, { label: string; path: string }[]> = {
   ],
   admin: [
     { label: "Khám phá sản phẩm", path: "admin-home" }, { label: "Tổng quan", path: "admin" }, { label: "Người dùng", path: "admin-users" }, { label: "Xác minh người bán", path: "admin-sellers" },
-    { label: "Duyệt chiến dịch", path: "admin-campaigns" }, { label: "Huấn luyện AI", path: "admin-ai-training" }, { label: "Giao dịch", path: "admin-transactions" },
+    { label: "Duyệt chiến dịch", path: "admin-campaigns" }, { label: "Huấn luyện AI", path: "admin-ai-training" }, { label: "Sản xuất", path: "admin-production" }, { label: "Giao dịch", path: "admin-transactions" },
     { label: "Khiếu nại", path: "admin-disputes" }, { label: "Phân tích", path: "admin-analytics" }, { label: "Trung tâm trợ giúp", path: "admin-help" },
     { label: "Hộp thư hỗ trợ", path: "admin-support" }, { label: "Hướng dẫn sử dụng", path: "admin-guide" }, { label: "Danh mục & Cài đặt", path: "admin-settings" },
   ],
@@ -587,25 +588,14 @@ function GenericDashboardPage({ role, page }: { role: Role; page: string }) {
     "seller-analytics": <Analytics scope="seller" />, "seller-finance": <Finance />, "seller-settings": <BusinessProfile key={state.session?.userId} role="seller" />,
     "seller-orders": <SellerOrders />, "seller-order-detail": <SellerOrders />, "seller-products": <SellerProducts />,
     "seller-campaigns": <CampaignTable />, "seller-production": <SellerProduction />,
-    "partner": <ProductionWork mode="overview" />, "partner-requests": <ProductionWork mode="requests" />,
-    "partner-production": <ProductionWork mode="progress" />, "partner-profile": <BusinessProfile key={state.session?.userId} role="partner" />,
+    "partner": <ProductionWorkspace role="partner" mode="overview" />, "partner-requests": <ProductionWorkspace role="partner" mode="requests" />,
+    "partner-production": <ProductionWorkspace role="partner" mode="progress" />, "partner-profile": <BusinessProfile key={state.session?.userId} role="partner" />,
     account: <CustomerOverview />, orders: <CustomerOrders onTrack={id=>go(`customer-order/${id}`)} />, profile: <SettingsForm />,
   };
   return <DashboardShell role={role} page={page}><PageTitle title={title} description={desc} action={page === "seller-products" ? <button onClick={()=>go("seller-product-new")} className="rounded-xl bg-teal-600 px-4 py-3 text-sm font-semibold text-white">Thêm sản phẩm</button> : undefined} />{page.endsWith("notifications") ? <RelevantNotifications /> : content[page] || <Empty title="Chưa có nội dung cho trang này" text="Vui lòng chọn chức năng trong thanh điều hướng." action="Về tổng quan" path={role==='customer'?'account':role} />}</DashboardShell>;
 }
 
-function SellerProduction() {
-  const { state, createProductionRequest } = useDemoStore();
-  const eligible = state.campaigns.filter((campaign) => campaign.sellerId === state.session?.userId && campaign.status === "Thành công");
-  const requests = state.productionRequests.filter((request) => request.sellerId === state.session?.userId);
-  const requestId = useRecordParam('request');
-  if (requestId) {
-    const request = requests.find(item => item.id === requestId);
-    const campaign = state.campaigns.find(item => item.id === request?.campaignId);
-    return <div className="space-y-5"><a href="#seller-production" className="inline-flex py-2 font-semibold text-teal-700">← Quay lại lệnh sản xuất</a><section className="rounded-2xl border border-slate-200 bg-white p-6">{request ? <><h2 className="font-serif text-2xl font-bold">Chi tiết lệnh {request.id}</h2><p className="mt-3 font-semibold">{campaign?.name}</p><div className="my-5"><Status>{request.status}</Status></div><dl className="mb-5 grid gap-4 sm:grid-cols-2">{[['Số lượng', request.quantity], ['Tiến độ', `${request.progress}%`], ['Ngày dự kiến', request.estimatedCompletion], ['Cập nhật', new Date(request.updatedAt).toLocaleString('vi-VN')]].map(([key,value]) => <div key={key}><dt className="text-sm text-slate-500">{key}</dt><dd className="mt-1 font-semibold">{value}</dd></div>)}</dl><Progress value={request.progress} />{campaign && <a href={`#seller-campaign-detail/${encodeURIComponent(campaign.id)}`} className="mt-5 inline-block font-semibold text-teal-700">Xem chiến dịch liên quan →</a>}</> : <><h2 className="text-xl font-bold">Không tìm thấy lệnh sản xuất</h2><p className="mt-3 text-sm text-slate-500">Lệnh không tồn tại hoặc không thuộc cửa hàng của bạn.</p></>}</section></div>;
-  }
-  return <div className="space-y-5">{eligible.map((campaign) => <section key={campaign.id} className="rounded-2xl border border-teal-200 bg-teal-50 p-5"><div className="flex flex-wrap items-center justify-between gap-4"><div><Status>Thành công</Status><h2 className="mt-2 font-serif text-xl font-bold">{campaign.name}</h2><p className="mt-1 text-sm text-slate-600">{campaign.currentOrders} đơn đủ điều kiện · MOQ {campaign.moq}</p></div><button onClick={() => createProductionRequest(campaign.id)} disabled={requests.some((request) => request.campaignId === campaign.id)} className="rounded-xl bg-teal-600 px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50">{requests.some((request) => request.campaignId === campaign.id) ? "Đã tạo lệnh sản xuất" : "Tạo lệnh sản xuất"}</button></div></section>)}{requests.map((request) => <section key={request.id} className="rounded-2xl border border-slate-200 bg-white p-5"><div className="flex justify-between gap-4"><div><Status>{request.status}</Status><h2 className="mt-2 font-semibold">{state.campaigns.find((item) => item.id === request.campaignId)?.name}</h2><p className="mt-1 text-sm text-slate-500">{request.id} · {request.quantity} sản phẩm · Cập nhật {new Date(request.updatedAt).toLocaleString("vi-VN")}</p></div><strong>{request.progress}%</strong></div><div className="mt-4"><Progress value={request.progress} /></div><a href={recordHref("request", request.id, "seller-production")} className="mt-4 inline-block font-semibold text-teal-700">Xem lệnh sản xuất →</a></section>)}</div>;
-}
+function SellerProduction() { return <ProductionWorkspace role="seller" />; }
 
 function SettingsForm() {
   const { state, updateProfile } = useDemoStore();
@@ -778,10 +768,11 @@ export default function Platform({ route }: { route: string }) {
     try { campaignId = decodeURIComponent(route.slice("seller-campaign-detail/".length)); } catch { /* Invalid URL uses the missing-campaign view. */ }
     return <SellerCampaignDetail campaignId={campaignId} />;
   }
-  if (route === "seller-ai") return <SellerAI />;
+  if (route === "seller-ai") return <DashboardShell role="seller" page="seller-ai"><AdminAITraining key={state.session?.userId} scope="seller" /></DashboardShell>;
   if (route === "seller-success") return <SellerAI success />;
   if (route === "seller-product-new") return <Wizard />;
   if (route === "seller-campaign-new") return <Wizard campaign />;
+  if (route === "customer-production" || route === "admin-production") { const role = route === "customer-production" ? "customer" : "admin"; return <DashboardShell role={role} page={route}><PageTitle title="Theo dõi sản xuất" description="Cập nhật từ lệnh sản xuất liên quan đến tài khoản." /><ProductionWorkspace role={role} /></DashboardShell>; }
   if (route === "admin-ai-training") return <DashboardShell role="admin" page="admin-ai-training"><AdminAITraining /></DashboardShell>;
   if (route === "admin") return <Admin />;
   if (route === "admin-campaigns") return <AdminCampaigns />;
