@@ -116,3 +116,5 @@ Campaign mẫu có lịch sử phân bổ theo ngày và profile tăng tự đ�
 ## Seller huấn luyện và theo dõi sản xuất
 
 Seller → Dự báo AI nay dùng cùng quy trình huấn luyện với admin cho chiến dịch thuộc cửa hàng. Seller nhập CSV riêng, cấu hình snapshot, khởi chạy worker, xem tiến trình và kết quả. Xem [quyền và luồng theo tài khoản](SAN_XUAT_VA_AI_THEO_VAI_TRO.md) để biết phạm vi dữ liệu và các trang sản xuất.
+
+Ô “Tìm sản phẩm hoặc mã chiến dịch” hiển thị kết quả khớp ngay bên dưới, gồm mã, tên sản phẩm và số lượng hiện tại. Chọn kết quả để cập nhật snapshot/lịch sử của chiến dịch; Enter chọn khi chỉ có một kết quả. Hỗ trợ không phân biệt hoa thường, tên không dấu, thông báo không tìm thấy và xóa tìm kiếm. Seller chỉ tìm chiến dịch đang chạy thuộc cửa hàng.

@@ -1,3 +1,5 @@
+import BrandLogo from "./BrandLogo";
+import { ThemeToggle } from "./Theme";
 import ProductionWorkspace from './ProductionWorkspace';
 import { useRecordParam, recordHref } from './dashboardRoutes';
 import CampaignForecastView from "./CampaignForecastView";
@@ -107,8 +109,7 @@ const navByRole: Record<Role, { label: string; path: string }[]> = {
 function Logo({ light = false, homePath = "" }: { light?: boolean; homePath?: string }) {
   return (
     <button onClick={() => go(homePath)} className="flex items-center gap-2.5" aria-label="Về trang chủ">
-      <span className="grid h-9 w-9 place-items-center rounded-xl bg-teal-600 text-lg font-black text-white shadow-sm">P</span>
-      <span className={`font-mono text-lg font-bold tracking-tight ${light ? "text-white" : "text-slate-900"}`}>PRE<span className="text-teal-500">ORA</span></span>
+      <BrandLogo light={light} />
     </button>
   );
 }
@@ -151,6 +152,7 @@ function PublicHeader(_props: { cartCount: number }) {
           <button onClick={() => go("help")} className="hover:text-teal-700">Trợ giúp</button>
         </nav>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           {state.session?.role === "customer" && <button onClick={() => go("cart")} className="relative rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700">
             Giỏ hàng {cartCount > 0 && <span className="ml-1 rounded-full bg-orange-500 px-1.5 py-0.5 text-[10px] text-white">{cartCount}</span>}
           </button>}
@@ -354,7 +356,7 @@ function DashboardShell({ role, page, children }: { role: Role; page: string; ch
     <div className={`min-w-0 transition-[margin] duration-200 motion-reduce:transition-none ${collapsed ? 'lg:ml-0' : 'lg:ml-[260px]'}`}>
       <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:px-8">
         <div className="flex min-w-0 items-center gap-3"><button ref={menuRef} type="button" aria-label={visible ? 'Thu gọn thanh điều hướng' : 'Mở thanh điều hướng'} aria-expanded={visible} aria-controls="dashboard-sidebar" onClick={() => desktop ? setCollapsed(value => !value) : setMobileOpen(value => !value)} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-teal-600"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M4 6h16M4 12h16M4 18h16" /></svg></button><div className="lg:hidden"><Logo homePath={homePath} /></div><div className="hidden truncate text-sm text-slate-500 lg:block">PREORA / <strong className="text-slate-900">{navByRole[role].find(x => x.path === page)?.label || 'Chi tiết'}</strong></div></div>
-        <div className="flex shrink-0 items-center gap-3"><DemoClock /><button aria-label="Thông báo của tôi" onClick={() => navigate(notificationPath)} className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">{notificationItems(state).length}</button><div className="hidden text-right sm:block"><p className="text-sm font-semibold text-slate-900">{displayName}</p><p className="text-xs text-slate-500">{{customer:'Khách hàng',seller:'Người bán',admin:'Quản trị viên',partner:'Đối tác sản xuất'}[role]}</p></div><span className="grid h-9 w-9 place-items-center rounded-full bg-teal-100 text-xs font-bold text-teal-700">{displayName.slice(0, 2).toUpperCase()}</span></div>
+        <div className="flex shrink-0 items-center gap-3"><DemoClock /><ThemeToggle /><button aria-label="Thông báo của tôi" onClick={() => navigate(notificationPath)} className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 text-xs font-bold text-slate-600">{notificationItems(state).length}</button><div className="hidden text-right sm:block"><p className="text-sm font-semibold text-slate-900">{displayName}</p><p className="text-xs text-slate-500">{{customer:'Khách hàng',seller:'Người bán',admin:'Quản trị viên',partner:'Đối tác sản xuất'}[role]}</p></div><span className="grid h-9 w-9 place-items-center rounded-full bg-teal-100 text-xs font-bold text-teal-700">{displayName.slice(0, 2).toUpperCase()}</span></div>
       </header>
       <main className="min-w-0 p-5 lg:p-8">{children}</main>
     </div>

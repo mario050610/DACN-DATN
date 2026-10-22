@@ -1,11 +1,11 @@
-﻿import type { FullResult } from './FullCampaignResults';
+import type { FullResult } from './FullCampaignResults';
 const n=(value:number,digits=0)=>new Intl.NumberFormat('vi-VN',{maximumFractionDigits:digits}).format(value);
 export default function ForecastExplanation({ result }: { result: FullResult }) {
   const inputs=result.modelInputs;
   const plan=result.productionRange;
   const gap=Math.max(0,result.campaign.moq-result.campaign.currentOrders);
   const beats=result.metrics.mae<result.baseline.mae;
-  const dataSource=result.provenance.synthetic?'các chiến dịch mô phỏng':'CSV lịch sử do quản trị viên cung cấp';
+  const dataSource=result.provenance.synthetic?'các chiến dịch mô phỏng':'CSV lịch sử đã khai báo nguồn';
   const steps=[
     {title:'Đọc dữ liệu tại thời điểm dự báo',text:`Chiến dịch có ${n(result.campaign.currentOrders)} sản phẩm hợp lệ, MOQ ${n(result.campaign.moq)}, còn ${n(Number(inputs.daysRemaining))} ngày. Cần thêm ${n(gap)} sản phẩm để đạt MOQ.`,evidence:`Tốc độ 7 ngày: ${n(Number(inputs.ordersPerDay),2)} sản phẩm/ngày · Tỷ lệ hủy: ${n(Number(inputs.cancellationRate)*100,2)}%.`},
     {title:'Học từ các chiến dịch đã có kết quả',text:`Hai model học ${result.featuresUsed.length} feature từ ${dataSource}: một model dự báo số lượng cuối kỳ, một model học kết quả đạt/không đạt MOQ. Chiến dịch đang chọn không được dùng làm nhãn train.`,evidence:`Train: ${n(result.campaignCounts.train)} chiến dịch · Validation: ${n(result.campaignCounts.validation)} · Calibration: ${n(result.campaignCounts.calibration)} · Test: ${n(result.campaignCounts.test)}.`},

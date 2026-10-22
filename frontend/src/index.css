@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif:wght@600;700&display=swap');
 @import 'tailwindcss';
+@import './theme.css';
 
 @theme {
   --font-serif: 'Noto Serif', Georgia, serif;
@@ -12,8 +13,8 @@ body,
 }
 
 body {
-  background-color: #f8fafc;
-  color: #0f172a;
+  background-color: var(--app-page);
+  color: var(--app-text);
   font-family: 'Inter', sans-serif;
   -webkit-font-smoothing: antialiased;
 }

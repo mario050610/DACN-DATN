@@ -1,3 +1,4 @@
+import { ThemeProvider } from "./Theme"
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
@@ -6,8 +7,8 @@ import { DemoStoreProvider } from './DemoStore'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <DemoStoreProvider>
+    <ThemeProvider><DemoStoreProvider>
       <App />
-    </DemoStoreProvider>
+    </DemoStoreProvider></ThemeProvider>
   </React.StrictMode>,
 )

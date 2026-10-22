@@ -41,5 +41,6 @@ def latest_campaign_model(campaign_id: str, request: Request, response: Response
             from .seller_training import owns_campaign
             owns_campaign(user['id'],campaign_id)
     job=training_jobs.latest_full_campaign(campaign_id)
-    if not job:raise HTTPException(404,'Chưa có kết quả full cho chiến dịch này. Quản trị viên cần huấn luyện trước.')
+    role_label='Quản trị viên' if user['role']=='admin' else 'Người bán'
+    if not job:raise HTTPException(404,f"Chưa có kết quả dự báo đầy đủ cho chiến dịch này. {role_label} cần huấn luyện trước.")
     return {'jobId':job['id'],'created':job['created'],'result':job['result']}

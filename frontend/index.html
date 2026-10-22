@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0f172a" />
     <meta name="description" content="PREORA - nền tảng thương mại điện tử đặt hàng trước tích hợp dự báo nhu cầu AI (bản prototype chạy local)." />
+    <script>
+      // Apply the stored appearance before the first paint; blocked storage falls back to the OS.
+      (() => { let saved; try { saved=localStorage.getItem('preora-theme'); } catch {} const dark=saved==='dark'||(saved!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches); document.documentElement.dataset.theme=dark?'dark':'light'; document.documentElement.classList.toggle('dark',dark); })();
+    </script>
+    <link rel="icon" type="image/svg+xml" href="/preora-icon.svg" />
     <title>PREORA — AI-powered Pre-order Commerce</title>
   </head>
   <body>

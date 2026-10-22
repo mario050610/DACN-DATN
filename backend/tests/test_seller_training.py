@@ -1,4 +1,4 @@
-﻿from test_training import client, login, payload
+from test_training import client, login, payload
 from app.services import training_jobs as jobs
 from app.api.v1.routes.shopping import CAMPAIGNS
 
@@ -72,3 +72,13 @@ def test_seller_historical_dataset_stays_private(client):
     assert client.post('/api/seller/ai-training',json=own).status_code==202
     assert client.post('/api/auth/login',json={'email':'seller.b@preora.demo','password':'Demo123!'}).status_code==200
     assert client.get('/api/seller/ai-training').json()['datasets']==[]
+
+import pytest
+@pytest.mark.parametrize('role',['seller','admin'])
+def test_empty_forecast_message_matches_current_role(client,role):
+    login(client,role)
+    campaign=own_payload()['campaignId']
+    response=client.get('/api/ai/campaigns/'+campaign+'/latest')
+    assert response.status_code==404
+    label='Quản trị viên' if role=='admin' else 'Người bán'
+    assert label+' cần huấn luyện trước.' in response.json()['detail']
