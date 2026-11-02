@@ -1,3 +1,4 @@
+import { PersonalizationProvider } from "./Personalization"
 import { ThemeProvider } from "./Theme"
 import React from 'react'
 import ReactDOM from 'react-dom/client'
@@ -8,7 +9,7 @@ import { DemoStoreProvider } from './DemoStore'
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider><DemoStoreProvider>
-      <App />
+      <PersonalizationProvider><App /></PersonalizationProvider>
     </DemoStoreProvider></ThemeProvider>
   </React.StrictMode>,
 )

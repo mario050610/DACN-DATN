@@ -1,5 +1,6 @@
 ﻿import importlib
 import pytest
+from datetime import datetime as RealDatetime,timezone
 from fastapi.testclient import TestClient
 from app.main import app
 from app.api.v1.routes import shopping
@@ -8,11 +9,16 @@ auth=importlib.import_module('app.api.v1.routes.auth')
 @pytest.fixture
 def client(tmp_path,monkeypatch):
  monkeypatch.setenv('AUTH_DATABASE_PATH',str(tmp_path/'shopping.sqlite3'));monkeypatch.setattr(auth,'ITERATIONS',1000)
+ # Catalogue fixture campaigns have fixed October dates; this suite must not expire with wall time.
+ class FixtureDatetime(RealDatetime):
+  @classmethod
+  def now(cls,tz=None):return cls(2026,10,22,5,tzinfo=timezone.utc).astimezone(tz) if tz else cls(2026,10,22,5)
+ monkeypatch.setattr(shopping,'datetime',FixtureDatetime)
  with TestClient(app) as c:
   signup(c,'first@example.test');yield c
 
 def signup(c,email):
- r=c.post('/api/auth/register',json={'name':'Test customer','email':email,'password':'StrongTest123!','role':'customer'});assert r.status_code==200,r.text
+ r=c.post('/api/auth/register',json={'phone':'0901234567','password_confirmation':'StrongTest123!','accepted_terms':True,'accepted_privacy':True,'name':'Test customer','email':email,'password':'StrongTest123!','role':'customer'});assert r.status_code==200,r.text
  return r.json()['user']['id']
 def add(c,cid='CD-2408',quantity=1,selected=True,**extra):
  return c.post('/api/shopping/cart',json={'campaignId':cid,'quantity':quantity,'selected':selected,**extra})

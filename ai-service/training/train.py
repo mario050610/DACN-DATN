@@ -44,15 +44,15 @@ def classification_scores(y, probability):
             'brier': float(brier_score_loss(y, probability)), 'positive_rate': float(y.mean())}
 
 
-def make_model(numeric, categorical, classification):
+def make_model(numeric, categorical, classification, algorithm='hist_gradient_boosting'):
     transform = ColumnTransformer([
         ('numeric', SimpleImputer(strategy='median'), numeric),
         ('category', make_pipeline(SimpleImputer(strategy='most_frequent'),
           OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1)), categorical),
     ])
     # Fixed iteration budget: no random early-stopping split across temporal groups.
-    estimator = (HistGradientBoostingClassifier if classification else HistGradientBoostingRegressor)(
-        max_iter=120, max_leaf_nodes=15, l2_regularization=2, early_stopping=False, random_state=SEED)
+    from model_factory import make_estimator
+    estimator = make_estimator(algorithm,classification)
     return make_pipeline(transform, estimator)
 
 

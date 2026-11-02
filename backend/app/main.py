@@ -28,3 +28,15 @@ app.include_router(analytics_router, prefix='/api')
 
 from app.api.v1.routes.seller_training import router as seller_training_router
 app.include_router(seller_training_router, prefix='/api')
+
+from app.api.v1.routes.verification import router as verification_router
+app.include_router(verification_router,prefix='/api')
+
+from app.api.v1.routes.community import router as community_router
+app.include_router(community_router,prefix='/api')
+from app.api.v1.routes.lifecycle import router as lifecycle_router
+app.include_router(lifecycle_router,prefix='/api')
+from app.api.v1.routes.account import router as account_router
+app.include_router(account_router,prefix='/api')
+from app.api.v1.routes.partner_verification import router as partner_verification_router
+app.include_router(partner_verification_router,prefix='/api')

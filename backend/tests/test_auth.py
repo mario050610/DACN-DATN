@@ -15,7 +15,7 @@ def client(tmp_path,monkeypatch):
     with TestClient(app) as c:yield c
 
 def register(client,email='new@example.test'):
-    response=client.post('/api/auth/register',json={'email':email,'password':'StrongTest123!','name':'Người dùng thử','role':'customer'})
+    response=client.post('/api/auth/register',json={'phone':'0901234567','password_confirmation':'StrongTest123!','accepted_terms':True,'accepted_privacy':True,'email':email,'password':'StrongTest123!','name':'Người dùng thử','role':'customer'})
     assert response.status_code==200,response.text
     return response.json()['user']
 
@@ -46,8 +46,8 @@ def test_register_duplicate_and_no_privileged_signup(client):
     user=register(client)
     assert user['role']=='customer'
     assert client.get('/api/auth/me').json()['user']['id']==user['id']
-    assert client.post('/api/auth/register',json={'email':'new@example.test','password':'StrongTest123!','name':'User','role':'customer'}).status_code==409
-    assert client.post('/api/auth/register',json={'email':'root@example.test','password':'StrongTest123!','name':'User','role':'admin'}).status_code==422
+    assert client.post('/api/auth/register',json={'phone':'0901234567','password_confirmation':'StrongTest123!','accepted_terms':True,'accepted_privacy':True,'email':'new@example.test','password':'StrongTest123!','name':'User','role':'customer'}).status_code==409
+    assert client.post('/api/auth/register',json={'phone':'0901234567','password_confirmation':'StrongTest123!','accepted_terms':True,'accepted_privacy':True,'email':'root@example.test','password':'StrongTest123!','name':'User','role':'admin'}).status_code==422
     with auth.database() as db:
         encoded=db.execute('SELECT password FROM accounts WHERE id=?',(user['id'],)).fetchone()['password']
         assert 'StrongTest123!' not in encoded

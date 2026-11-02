@@ -137,3 +137,13 @@ html[data-theme="dark"] svg text[fill="#475569"] { fill:#b6c5d9; }
   html[data-theme="dark"] [class~="bg-teal-500"][class~="text-slate-950"] { color:#042f2e; }
   html[data-theme="dark"] [class~="bg-orange-500"][class~="text-white"] { background-color:#b45309; }
 }
+
+/* Personal preferences do not alter stored domain data. */
+html[data-text-size="large"] { font-size:18px; }
+html[data-reduce-motion="true"] *, html[data-reduce-motion="true"] *::before, html[data-reduce-motion="true"] *::after { animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important; }
+
+@media (max-width:420px) { html[data-text-size="large"] header [class~="lg:hidden"] .brand-wordmark { display:none; } }
+
+/* Required controls retain native constraint validation; asterisk is visual, aria comes from required. */
+label:has(input[required],textarea[required],select[required])::before { content:"* ";color:#e11d48;font-weight:700; }
+html[data-theme="dark"] label:has(input[required],textarea[required],select[required])::before { color:#fda4af; }

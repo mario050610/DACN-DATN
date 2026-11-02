@@ -1,0 +1,2 @@
+import {apiErrorMessage} from "./apiErrors";
+export async function accountApi(path:string,body?:unknown){const r=await fetch('/api/account'+path,{credentials:'same-origin',cache:'no-store',method:body===undefined?'GET':'POST',headers:body===undefined?{}:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});const d=await r.json();if(!r.ok)throw new Error(apiErrorMessage(d.detail,'Kiểm tra các trường bắt buộc và thông tin hồ sơ.'));return d;}

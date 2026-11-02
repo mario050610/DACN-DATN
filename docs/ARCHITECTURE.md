@@ -1,10 +1,12 @@
 # PREORA — Kiến trúc prototype và thiết kế mục tiêu
 
-Đối chiếu code ngày 19/10/2026. Phạm vi báo cáo: **Design – Data preparation – Technologies**. Phân biệt phần đang chạy, mô phỏng và thiết kế mục tiêu; việc có artifact ML không đồng nghĩa mọi endpoint đã phục vụ artifact đó.
+Đối chiếu code ngày 30/10/2026. Phạm vi báo cáo: **Design – Data preparation – Technologies**. Phân biệt phần đang chạy, mô phỏng và thiết kế mục tiêu; việc có artifact ML không đồng nghĩa mọi endpoint đã phục vụ artifact đó.
 
-## Sơ đồ hiện trạng
+## Sơ đồ tham chiếu ngày 19/10/2026
 
 ![Kiến trúc prototype hiện tại](diagrams/PREORA_CURRENT_ARCHITECTURE.svg)
+
+Sơ đồ này ghi nhận kiến trúc trước bổ sung backend vòng đời ngày 30/10; hiện trạng mới được mô tả trong bảng và tài liệu [Vòng đời sản phẩm](VONG_DOI_SAN_PHAM.md).
 
 Bản chỉnh sửa được: [draw.io](diagrams/PREORA_CURRENT_ARCHITECTURE.drawio). Sơ đồ này bổ sung cho H11/H12 (thiết kế mục tiêu), không thay đổi bộ sơ đồ gốc do người dùng cung cấp.
 
@@ -12,8 +14,8 @@ Bản chỉnh sửa được: [draw.io](diagrams/PREORA_CURRENT_ARCHITECTURE.dra
 
 | Thành phần | Hiện trạng | Lưu trữ / giới hạn |
 |---|---|---|
-| React + TypeScript + Vite + Tailwind | Giao diện khách hàng, seller, admin và partner prototype | `DemoStore` lưu localStorage: sản phẩm, chiến dịch, vòng đời và nhiều dữ liệu demo; có gọi API auth/shopping/AI |
-| Backend FastAPI + Pydantic, cổng 8000 | Auth/session, 2FA, shopping, analytics, chat gateway, training jobs, đọc kết quả AI theo ownership | Không chỉ là health/proxy skeleton |
+| React + TypeScript + Vite + Tailwind | Giao diện khách hàng, seller, admin và partner prototype | `DemoStore` đọc nguồn nghiệp vụ `/api/lifecycle/state`, gửi command có revision; localStorage còn tùy chọn giao diện và bản sao prototype cũ |
+| Backend FastAPI + Pydantic, cổng 8000 | Auth/session, 2FA, shopping, analytics, chat gateway, training jobs, lifecycle/feedback/plan/quote/release/shipment/review/return, đọc kết quả AI theo ownership | Không chỉ là health/proxy skeleton |
 | Auth và shopping theo tài khoản | Giỏ hàng, yêu thích, voucher, đơn/biên nhận checkout mô phỏng được lưu phía server | SQLite `backend/data/accounts.sqlite3` mặc định (`AUTH_DATABASE_PATH`); catalogue server là JSON; checkout không thu tiền thật |
 | Theo dõi hành vi | Views/clicks từ frontend; favorite/cart từ mutation shopping thành công | SQLite `tmp/ai-training/behavior.sqlite3`; chỉ quan sát từ khi bật tracker, không đủ toàn bộ lịch sử; số sự kiện không phải số người duy nhất |
 | Huấn luyện trên web | Backend tạo job và chạy Python worker bằng subprocess | `tmp/ai-training/jobs.sqlite3`, thư mục mỗi job có model, kết quả và log; cấu hình qua `TRAINING_JOBS_DIR` |
@@ -69,6 +71,10 @@ H11/H12 mô tả mục tiêu: client theo vai trò → backend nghiệp vụ →
 
 Các module trong sơ đồ là trách nhiệm logic; chưa khẳng định là microservices triển khai độc lập. Các portal hiện dùng chung frontend. Các vai trò Business Admin, AI/Data Operator và IT Admin hiện gộp vào quyền `admin` trong prototype.
 
+## Vòng đời sản phẩm bổ sung ngày 30/10/2026
+
+Xem [VONG_DOI_SAN_PHAM.md](VONG_DOI_SAN_PHAM.md): feedback trước sản xuất, phương án có phiên bản và xác nhận, báo giá theo năng lực, thành phẩm thực tế, vận đơn, nhận hàng, đánh giá sao, đổi trả, kiểm chứng snapshot AI và cảnh báo. Nghiệp vụ lưu SQLite cùng tài khoản; đây chưa phải migration PostgreSQL. Sandbox thanh toán nội bộ và vận đơn nhập tay được ghi rõ trên giao diện.
+
 ## Tài liệu liên quan
 
 - [Ánh xạ nguồn dữ liệu và 16 feature](DATA_PROVENANCE.md)
@@ -79,4 +85,4 @@ Các module trong sơ đồ là trách nhiệm logic; chưa khẳng định là 
 
 ### Trang sản xuất và quyền AI theo vai trò (21/10/2026)
 
-Chi tiết trong [SAN_XUAT_VA_AI_THEO_VAI_TRO.md](SAN_XUAT_VA_AI_THEO_VAI_TRO.md). Partner được tách tổng quan/tiếp nhận/cập nhật tiến độ. Customer, seller và admin có trang theo dõi cùng lệnh theo phạm vi tài khoản. Dữ liệu sản xuất vẫn ở trình duyệt; sự kiện storage đồng bộ tab cùng origin, chưa đồng bộ đa thiết bị. Seller có API riêng và có thể vận hành huấn luyện cho chiến dịch của mình; dataset và phiên riêng được lọc ở backend.
+Chi tiết trong [SAN_XUAT_VA_AI_THEO_VAI_TRO.md](SAN_XUAT_VA_AI_THEO_VAI_TRO.md). Partner được tách tổng quan/tiếp nhận/cập nhật tiến độ. Customer, seller và admin có trang theo dõi cùng lệnh theo phạm vi tài khoản. Từ 30/10, dữ liệu sản xuất và chiến dịch chuyển sang SQLite backend, đồng bộ qua polling có revision và phân quyền; không còn lấy cache trình duyệt làm nguồn ghi có thẩm quyền. Seller có API riêng và có thể vận hành huấn luyện cho chiến dịch của mình; dataset và phiên riêng được lọc ở backend.

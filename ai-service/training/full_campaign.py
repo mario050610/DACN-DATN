@@ -1,4 +1,4 @@
-﻿"""Full diagram implementation. Synthetic demo and administrator-provided history stay distinct."""
+"""Full diagram implementation. Synthetic demo and administrator-provided history stay distinct."""
 import os
 os.environ.setdefault('OMP_NUM_THREADS','4')
 import hashlib
@@ -13,6 +13,7 @@ from sklearn.ensemble import HistGradientBoostingClassifier,HistGradientBoosting
 from sklearn.inspection import permutation_importance
 from app.services import campaign_forecasting as contract
 from train import make_model,regression_scores,classification_scores
+from model_factory import MODEL_LABELS
 
 GENERATOR_VERSION='campaign-scenarios-v1'
 
@@ -116,11 +117,13 @@ def train_and_predict(payload,folder,progress):
     data.to_csv(folder/'training_samples.csv',index=False)
     features=contract.FEATURES
     training=splits['train'];validation=splits['validation'];calibration=splits['calibration'];test=splits['test']
+    algorithm=payload.get('modelAlgorithm','hist_gradient_boosting')
+    model_label=MODEL_LABELS[algorithm]
     regressors=[];classifiers=[];candidates=[]
     for index,leaves in enumerate((7,15)):
-        progress(f'Train nhu cầu cuối kỳ và xác suất đạt MOQ, cấu hình {index+1}/2',35+index*15)
-        regressor=make_model(contract.NUMERIC,contract.CATEGORICAL,False)
-        classifier=make_model(contract.NUMERIC,contract.CATEGORICAL,True)
+        progress(f'{model_label}: train nhu cầu cuối kỳ và xác suất đạt MOQ, cấu hình {index+1}/2',35+index*15)
+        regressor=make_model(contract.NUMERIC,contract.CATEGORICAL,False,algorithm)
+        classifier=make_model(contract.NUMERIC,contract.CATEGORICAL,True,algorithm)
         regressor.steps[-1][1].set_params(max_leaf_nodes=leaves)
         classifier.steps[-1][1].set_params(max_leaf_nodes=leaves)
         regressor.fit(training[features],np.log1p(training.finalQuantity))
@@ -140,7 +143,7 @@ def train_and_predict(payload,folder,progress):
     residual=np.abs(np.log1p(calibration.finalQuantity.to_numpy())-regressor.predict(calibration[features]))
     rank=min(len(residual),int(np.ceil((len(residual)+1)*.8)))
     radius=float(np.sort(residual)[rank-1])
-    artifact={'schemaVersion':2,'features':features,'regressor':regressor,'classifier':classifier,'calibrator':calibrator,'logRadius':radius,
+    artifact={'schemaVersion':2,'modelAlgorithm':algorithm,'modelLabel':model_label,'features':features,'regressor':regressor,'classifier':classifier,'calibrator':calibrator,'logRadius':radius,
               'provenance':provenance,'target':'finalQuantity','successLabel':'finalQuantity >= moq','featureContract':'campaign-full-v1'}
     progress('Đánh giá trên chiến dịch test chưa dùng khi train',80)
     predicted,lower,upper,probability=predict_artifact(artifact,test)
@@ -189,7 +192,7 @@ def train_and_predict(payload,folder,progress):
     outside=[key for key in contract.NUMERIC if selected[key]<training[key].min() or selected[key]>training[key].max()]
     if outside:warnings.append('Đầu vào ngoài miền giá trị train: '+', '.join(outside))
     current=payload['currentOrders'];remaining=selected['daysRemaining']
-    result={'schemaVersion':2,'modelType':'campaign_full','modelVersion':f'campaign-full-{folder.name[:8]}',
+    result={'schemaVersion':2,'modelAlgorithm':algorithm,'modelLabel':model_label,'modelType':'campaign_full','modelVersion':f'campaign-full-{folder.name[:8]}',
         'dataset':provenance['name'],'provenance':provenance,'campaign':payload,'modelInputs':selected,'featuresUsed':features,
         'trainingCounts':{key:len(frame) for key,frame in splits.items()},'campaignCounts':{key:frame.campaignId.nunique() for key,frame in splits.items()},
         'splitAudit':audit,'candidates':candidates,'metrics':metrics,'baseline':regression_scores(test.finalQuantity,baseline.to_numpy()),

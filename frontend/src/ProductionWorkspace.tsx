@@ -1,4 +1,7 @@
-﻿import { useState } from "react"
+import {workflowProgress} from "./productionProgress";
+import ProductHighlights from "./ProductHighlights";
+import ProductionPlanForm from "./ProductionPlanForm";
+import { useState } from "react"
 import {
   useDemoStore,
   getEffectiveNow,
@@ -144,6 +147,7 @@ export default function ProductionWorkspace({
               )}
           </div>
         </section>
+        <ProductHighlights/>
         <section className={panel}>
           <h2 className="text-xl font-bold">Đi đến công việc</h2>
           <div className="mt-4 flex flex-wrap gap-3">
@@ -197,15 +201,16 @@ export default function ProductionWorkspace({
         ))}
       </dl>
       <div className="mt-5 flex justify-between text-sm">
-        <span>Sản lượng đã hoàn thành theo tiến độ</span>
-        <strong>{selected.progress}%</strong>
+        <span>Tiến độ xử lý lệnh</span>
+        <strong>{workflowProgress(selected)}%</strong>
       </div>
       <progress
-        aria-label="Tiến độ sản xuất"
+        aria-label="Tiến độ xử lý lệnh"
         max={100}
-        value={selected.progress}
+        value={workflowProgress(selected)}
         className="my-3 h-3 w-full accent-teal-600"
       />
+      <p className="mb-2 text-xs text-slate-500">Sản lượng đã hoàn thành: {selected.progress}%. Tiếp nhận lệnh tăng tiến độ quy trình, chưa tính là đã sản xuất hàng.</p><progress aria-label="Sản lượng đã hoàn thành" max={100} value={selected.progress} className="mb-4 h-2 w-full accent-blue-500"/>
       <ol className="grid gap-2 sm:grid-cols-5">
         {stages.map((stage, index) => (
           <li
@@ -216,7 +221,7 @@ export default function ProductionWorkspace({
                 : "bg-slate-50 text-slate-500"
             }`}
           >
-            {index + 1}. {stage}
+            {index + 1}. {stage}<span className="mt-2 block text-[11px]">{(()=>{const event=selected.history?.find(e=>e.status===stage);return event?new Date(event.at).toLocaleString("vi-VN"):(stage==="Chờ tiếp nhận"&&selected.createdAt?new Date(selected.createdAt).toLocaleString("vi-VN"):"Chưa có mốc ghi nhận");})()}</span>
           </li>
         ))}
       </ol>
@@ -290,13 +295,14 @@ export default function ProductionWorkspace({
           )}
         </div>
       )}
+      {role==='partner'&&mode==='progress'&&selected.status!=='Hoàn thành'&&<ProductionPlanForm key={selected.id} request={selected}/>}
       <h3 className="mt-6 font-semibold">Lịch sử cập nhật</h3>
       <ul className="mt-3 space-y-2 text-sm text-slate-600">
         {(selected.history?.length
           ? selected.history
           : [
               {
-                status: selected.status,
+                status: "Ghi nhận hiện trạng: "+selected.status,
                 progress: selected.progress,
                 at: selected.updatedAt,
               },
@@ -304,15 +310,13 @@ export default function ProductionWorkspace({
         ).map((event, index) => (
           <li key={index}>
             {new Date(event.at).toLocaleString("vi-VN")} · {event.status} ·{" "}
-            {event.progress}%
+            {event.progress}% {"note" in event ? event.note : ""} {"estimatedCompletion" in event ? `· Ngày dự kiến ${event.estimatedCompletion}` : ""}
           </li>
         ))}
       </ul>
       <p className="mt-5 rounded-xl bg-slate-50 p-3 text-xs leading-5 text-slate-500">
         Cùng một lệnh được hiển thị cho đối tác được giao, người bán, quản trị
-        viên và khách hàng có đơn liên quan. Dữ liệu prototype đồng bộ giữa các
-        trang và tab của cùng trình duyệt; chưa đồng bộ tiến độ qua thiết bị
-        khác.
+        viên và khách hàng có đơn liên quan. Dữ liệu nghiệp vụ lưu ở backend và đồng bộ giữa các thiết bị đang kết nối. Hoàn thành lệnh sản xuất không tự xác nhận khách đã nhận hàng.
       </p>
     </section>
   )
@@ -421,13 +425,13 @@ export default function ProductionWorkspace({
                       </p>
                     </div>
                     <span className="text-sm font-semibold text-teal-700">
-                      {r.status} · {r.progress}% →
+                      {r.status} · {workflowProgress(r)}% quy trình →
                     </span>
                   </div>
                   {mode !== "requests" && (
                     <progress
                       max={100}
-                      value={r.progress}
+                      value={workflowProgress(r)}
                       className="mt-3 h-2 w-full accent-teal-600"
                     />
                   )}

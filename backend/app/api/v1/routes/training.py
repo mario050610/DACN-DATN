@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field, model_validator
 from .auth import current_user, database, origin_guard
 from app.services import training_jobs as jobs
 from app.services import campaign_forecasting as full
+from app.services.model_choices import ModelAlgorithm
 
 router=APIRouter(prefix='/admin/ai-training',tags=['Admin AI training'])
 ROOT=Path(__file__).resolve().parents[5]
@@ -43,6 +44,7 @@ class TrainingRequest(BaseModel):
     dailyOrderQuantities: list[DailyQuantity]=Field(min_length=1,max_length=28)
     historyConfirmed: Literal[True]
     rebuildData: bool=False
+    modelAlgorithm: ModelAlgorithm='hist_gradient_boosting'
     mode: Literal['retail','campaign_demo','campaign_history']='retail'
     datasetId: str | None=Field(default=None,max_length=32)
     category: str=Field(default='Chưa phân loại',min_length=1,max_length=100)

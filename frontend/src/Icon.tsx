@@ -1,0 +1,4 @@
+export default function Icon({name,className='h-4 w-4'}:{name:'bell'|'edit'|'trash'|'eye'|'chat'|'follow'|'report'|'upload';className?:string}) {
+ const paths={bell:'M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4',edit:'m16 3 5 5-12 12-6 1 1-6Z M14 5l5 5',trash:'M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7',eye:'M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0',chat:'M21 11a9 9 0 0 1-9 9H3l1-6a9 9 0 1 1 17-3Z',follow:'M16 21v-2a5 5 0 0 0-5-5H6a5 5 0 0 0-5 5v2M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0M20 7v6m-3-3h6',report:'M5 22V3c5-4 9 4 15 0v12c-6 4-10-4-15 0',upload:'M12 16V2m-5 5 5-5 5 5M3 15v6h18v-6'};
+ return <svg aria-hidden="true" viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d={paths[name]}/></svg>;
+}

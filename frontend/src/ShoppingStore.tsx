@@ -19,6 +19,7 @@ export type Voucher = {
     expires: string;
 };
 export type Receipt = {
+    createdAt?: string;
     id: string;
     orders: StoreOrder[];
     subtotal: number;

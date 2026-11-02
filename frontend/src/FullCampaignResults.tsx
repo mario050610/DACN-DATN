@@ -1,7 +1,7 @@
 import CampaignProgressChart from "./CampaignProgressChart";
 import ForecastExplanation from "./ForecastExplanation";
 ﻿export type FullResult = {
-  modelType: 'campaign_full'; schemaVersion: number; modelVersion: string; dataset: string;
+  modelType: 'campaign_full'; modelLabel?: string; modelAlgorithm?: string; schemaVersion: number; modelVersion: string; dataset: string;
   provenance: { synthetic: boolean; name: string; statement?: string; provenance?: string; sourceStatement?: string };
   campaign: { campaignId: string; productName: string; currentDate: string; currentOrders: number; moq: number; target: number; price: number; startDate: string; endDate: string };
   predictedFinalDemand: number; demandLower: number; demandUpper: number; successProbability: number;
@@ -20,7 +20,7 @@ const panel = 'min-w-0 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6';
 export default function FullCampaignResults({ result }: { result: FullResult }) {
   const plan = result.productionRange;
   return <section className="space-y-5" aria-label="Kết quả đầy đủ theo sơ đồ">
-    <div><h2 className="font-serif text-2xl font-bold">3. Kết quả Demand Forecasting · {result.campaign.productName}</h2><p className="mt-2 text-sm text-slate-500">{result.campaign.campaignId} · Snapshot {result.campaign.currentDate} · {result.modelVersion}</p></div>
+    <div><h2 className="font-serif text-2xl font-bold">3. Kết quả Demand Forecasting · {result.campaign.productName}</h2><p className="mt-2 text-sm text-slate-500">{result.campaign.campaignId} · Snapshot {result.campaign.currentDate} · {result.modelVersion} · Model: {result.modelLabel || 'HistGradientBoosting'}</p></div>
     <div className={`rounded-xl border p-4 text-sm leading-6 ${result.provenance.synthetic ? 'border-amber-300 bg-amber-50 text-amber-900' : 'border-teal-200 bg-teal-50 text-teal-900'}`}><strong>{result.provenance.synthetic ? 'DEMO — TRAIN TRÊN DỮ LIỆU MÔ PHỎNG' : 'TRAIN TRÊN CSV LỊCH SỬ DO QUẢN TRỊ VIÊN CUNG CẤP'}</strong><p>{result.provenance.statement || result.provenance.sourceStatement || result.provenance.provenance}</p><p>Xác suất và sai số bên dưới được đánh giá trên nguồn này, chưa chứng minh hiệu quả cho dữ liệu PREORA khác.</p></div>
     {result.metrics.mae >= result.baseline.mae && <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Model nhu cầu chưa vượt baseline về MAE trên tập test này. Cần cải thiện dữ liệu/model trước khi dùng để chốt sản lượng.</p>}
     <div className="grid gap-4 lg:grid-cols-3">

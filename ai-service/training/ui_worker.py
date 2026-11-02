@@ -1,4 +1,4 @@
-﻿"""One isolated, persistent admin training job; no web server ML dependencies."""
+"""One isolated, persistent admin training job; no web server ML dependencies."""
 import json
 import sys
 import threading
@@ -28,7 +28,9 @@ def run(job_id):
         import joblib
         import numpy as np
         import pandas as pd
-        from sklearn.ensemble import HistGradientBoostingRegressor
+        from model_factory import make_estimator,MODEL_LABELS
+        algorithm=payload.get('modelAlgorithm','hist_gradient_boosting')
+        model_label=MODEL_LABELS[algorithm]
         for directory in (train.PROCESSED,train.REPORTS): directory.mkdir(parents=True,exist_ok=True)
         source=train.RAW/'uci/online_retail_II.xlsx'
         stamp={'size':source.stat().st_size,'mtime_ns':source.stat().st_mtime_ns,'top_products':100}
@@ -52,8 +54,8 @@ def run(job_id):
         if min(len(training),len(tuning),len(calibration),len(test))<20: raise ValueError('Không đủ mẫu cho bốn tập độc lập.')
         models=[]
         for index,leaves in enumerate((7,15)):
-            jobs.update(job_id,stage=f'Huấn luyện mô hình {index+1}/2 trên dữ liệu lịch sử UCI',progress=50+index*12)
-            model=HistGradientBoostingRegressor(max_iter=120,max_leaf_nodes=leaves,l2_regularization=2,early_stopping=False,random_state=42)
+            jobs.update(job_id,stage=f'{model_label}: huấn luyện cấu hình {index+1}/2 trên dữ liệu lịch sử UCI',progress=50+index*12)
+            model=make_estimator(algorithm,False,leaves)
             model.fit(training[features],np.log1p(training.next7))
             tuning_prediction=np.maximum(0,np.expm1(model.predict(tuning[features])))
             models.append((train.regression_scores(tuning.next7,tuning_prediction)['mae'],leaves,model))
@@ -77,6 +79,7 @@ def run(job_id):
         lower=payload['currentOrders']+max(0,next7-radius)*remaining/7
         upper=payload['currentOrders']+(next7+radius)*remaining/7
         result={
+            'modelAlgorithm':algorithm,'modelLabel':model_label,
             'modelVersion':f'uci-transfer-{job_id[:8]}', 'dataset':'UCI Online Retail II',
             'campaign':payload, 'trainingCounts':{'train':len(training),'validation':len(tuning),'calibration':len(calibration),'test':len(test)},
             'selectedLeafNodes':leaves,'metrics':metrics,'baseline':baseline,
@@ -100,7 +103,7 @@ def run(job_id):
         }
         folder=jobs.directory()/job_id
         model_path=folder/'model.joblib'
-        joblib.dump({'model':model,'features':features,'radius':radius,'source_domain':'retail','target':'next7','target_transform':'log1p'},model_path)
+        joblib.dump({'modelAlgorithm':algorithm,'modelLabel':model_label,'model':model,'features':features,'radius':radius,'source_domain':'retail','target':'next7','target_transform':'log1p'},model_path)
         restored=joblib.load(model_path)
         np.testing.assert_allclose(model.predict(row[features]),restored['model'].predict(row[features]))
         (folder/'result.json').write_text(json.dumps(result,ensure_ascii=False,indent=2,allow_nan=False),encoding='utf-8')

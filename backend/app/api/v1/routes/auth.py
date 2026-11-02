@@ -13,7 +13,9 @@ from contextlib import contextmanager
 from pathlib import Path
 from urllib.parse import quote
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field,field_validator,model_validator
+from app.services.account_profiles import migrate as migrate_accounts,normalize_phone,TERMS_VERSION
+from datetime import datetime,timezone
 from typing import Literal
 from app.core.config import CORS_ORIGINS
 
@@ -69,6 +71,7 @@ def database():
     CREATE TABLE IF NOT EXISTS challenges(token TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES accounts(id), expires REAL NOT NULL);
     CREATE TABLE IF NOT EXISTS limits(key TEXT PRIMARY KEY, count INTEGER NOT NULL, expires REAL NOT NULL);
     ''')
+    migrate_accounts(db)
     # Provision only the five explicit demo credentials, never reset existing passwords or 2FA.
     samples = [('customer-demo','customer@preora.demo','Nguyễn Minh Anh','customer'), ('seller-aurora','seller@preora.demo','Aurora Lab','seller'), ('seller-auralis','seller.b@preora.demo','Auralis Studio','seller'), ('admin-demo','admin@preora.demo','Lê Khánh','admin'), ('partner-demo','partner@preora.demo','VietCraft Manufacturing','partner')]
     for uid, email, name, role in samples:
@@ -133,7 +136,22 @@ class Login(BaseModel):
     password: str = Field(min_length=1,max_length=128)
 class Register(Login):
     name: str = Field(min_length=2,max_length=100)
-    role: Literal['customer','seller'] = 'customer'
+    role: Literal['customer','seller','partner'] = 'customer'
+    phone: str=Field(min_length=8,max_length=30)
+    password_confirmation:str=Field(min_length=10,max_length=128)
+    accepted_terms:Literal[True]
+    accepted_privacy:Literal[True]
+    storeName:str=Field(default='',max_length=150)
+    organizationName:str=Field(default='',max_length=150)
+    partnerType:Literal['manufacturing','supplier','logistics','other']='manufacturing'
+    @field_validator('phone')
+    @classmethod
+    def phone_valid(cls,v):return normalize_phone(v)
+    @model_validator(mode='after')
+    def confirmation(self):
+        if self.password!=self.password_confirmation:raise ValueError('Xác nhận mật khẩu không khớp.')
+        if self.role=='seller' and len(self.storeName.strip())<2:raise ValueError('Cần tên cửa hàng ít nhất 2 ký tự.')
+        return self
 class Verify(BaseModel):
     challenge: str = Field(min_length=20,max_length=100)
     code: str = Field(min_length=6,max_length=32)
@@ -158,6 +176,12 @@ def register(payload:Register,request:Request,response:Response):
         if db.execute('SELECT 1 FROM accounts WHERE email=?',(email,)).fetchone(): raise HTTPException(409,'Email này đã được đăng ký.')
         uid='user-'+secrets.token_hex(12)
         db.execute('INSERT INTO accounts(id,email,name,role,password) VALUES(?,?,?,?,?)',(uid,email,name,payload.role,password_hash(payload.password)))
+        at=datetime.now(timezone.utc).isoformat()
+        db.execute('UPDATE accounts SET phone=?,terms_version=?,terms_accepted_at=?,created_at=? WHERE id=?',(payload.phone,TERMS_VERSION,at,at,uid))
+        from .community import init,put_profile
+        init(db)
+        business={'storeName':payload.storeName.strip(),'businessType':'individual','mainCategory':''} if payload.role=='seller' else {'organizationName':payload.organizationName.strip() or name,'partnerType':payload.partnerType} if payload.role=='partner' else {}
+        put_profile(db,uid,{'displayName':business.get('storeName') or business.get('organizationName') or name,'business':business})
         return issue_session(db,response,db.execute('SELECT * FROM accounts WHERE id=?',(uid,)).fetchone())
 
 @router.post('/login', dependencies=[Depends(origin_guard)])

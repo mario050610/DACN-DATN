@@ -1,0 +1,4 @@
+import type {DemoState} from './DemoStore';
+export type LifecycleState={revision:number;state?:DemoState;unchanged?:boolean;result?:any};
+export class LifecycleError extends Error {constructor(message:string,public status:number,public revisionConflict=false){super(message);}}
+export async function lifecycle<T=any>(path:string,body?:unknown):Promise<T>{const r=await fetch('/api/lifecycle'+path,{credentials:'same-origin',cache:'no-store',method:body===undefined?'GET':'POST',headers:body===undefined?{}:{'Content-Type':'application/json'},body:body===undefined?undefined:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new LifecycleError(typeof d.detail==='string'?d.detail:'Dữ liệu không hợp lệ hoặc chưa kết nối backend.',r.status,r.status===409&&r.headers.get('X-PREORA-Conflict')==='revision');return d;}

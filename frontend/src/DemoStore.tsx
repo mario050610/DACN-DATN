@@ -1,8 +1,10 @@
+import {lifecycle,LifecycleError,type LifecycleState} from "./lifecycleApi";
+import {stampOrderChanges, type OrderEvent} from './orderEvents';
 import { encodeStoredDemoState, decodeStoredDemoState } from './demoStateStorage';
 import { seedDailyHistory, advanceDemoSales, addOrdersToHistory, type SalesSimulation } from './demoSalesSimulation';
 import catalogue from "./data/catalogue.json";
 import { authApi, type Account } from "./services/authApi";
-import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, useCallback, type Dispatch, type SetStateAction } from "react";
 import { demoForecastApi } from "./services/forecastApi";
 import { campaignIsOrderable, effectiveNow, evaluateCampaignOutcome, remainingDays } from "./services/businessRules";
 
@@ -23,6 +25,7 @@ export type StoreProduct = {
 };
 
 export type StoreCampaign = {
+  events?: {status:string;at:string}[];
   id: string;
   sellerId: string;
   productId: number;
@@ -49,6 +52,10 @@ export type CartItem = {
 };
 
 export type StoreOrder = {
+  shippingContact?:{name:string;phone:string;address:string};
+  receivedAt?:string;
+  events?: OrderEvent[];
+  discount?: number;
   id: string;
   customerId: string;
   sellerId: string;
@@ -80,7 +87,8 @@ export type StoreForecast = {
 };
 
 export type ProductionRequest = {
-  history?: { status: string; progress: number; at: string }[];
+  createdAt?:string;
+  history?: { status: string; progress: number; at: string; note?: string; previousCompletion?: string; estimatedCompletion?: string }[];
   id: string;
   campaignId: string;
   sellerId: string;
@@ -264,6 +272,10 @@ const initialState: DemoState = (() => {
 })();
 
 type StoreValue = {
+  serverReady:boolean;
+  serverBusy:boolean;
+  runLifecycle:(action:string,payload:Record<string,unknown>)=>Promise<any>;
+  refreshLifecycle:()=>Promise<void>;
   state: DemoState;
   importShoppingOrders: (orders: StoreOrder[]) => void;
   setSession: (role: DemoRole | null, userId?: string) => Promise<void>;
@@ -273,8 +285,8 @@ type StoreValue = {
   setDemoNow: (value: string | null) => void;
   setSalesSimulationEnabled: (enabled: boolean) => void;
   syncCampaignLifecycle: () => void;
-  createProduct: (input: Pick<StoreProduct, "name" | "category" | "price" | "description" | "manufacturingDays">) => StoreProduct;
-  createCampaign: (input: Omit<StoreCampaign, "id" | "sellerId" | "currentOrders" | "status">, submit: boolean) => StoreCampaign;
+  createProduct: (input: Pick<StoreProduct, "name" | "category" | "price" | "description" | "manufacturingDays">) => Promise<StoreProduct>;
+  createCampaign: (input: Omit<StoreCampaign, "id" | "sellerId" | "currentOrders" | "status">, submit: boolean) => Promise<StoreCampaign>;
   approveCampaign: (id: string) => void;
   rejectCampaign: (id: string, reason: string) => void;
   activateCampaign: (id: string) => void;
@@ -282,8 +294,10 @@ type StoreValue = {
   requestForecast: (campaignId: string) => Promise<StoreForecast>;
   finishCampaign: (id: string) => void;
   createProductionRequest: (campaignId: string) => void;
+  changeProductionPlan: (id:string,date:string,reason:string)=>Promise<void>;
   updateProduction: (id: string, progress: number, status: ProductionRequest["status"]) => void;
   completeRefund: (orderId: string) => void;
+  setSellerVerification:(id:string,verified:boolean)=>void;
   updateProfile: (name: string, email: string, notificationEmail: boolean) => void;
   resetDemo: () => void;
 };
@@ -380,34 +394,41 @@ function mergeAccount(current: DemoState, account: Account): DemoState {
 }
 
 export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
-  const [state, setState] = useState<DemoState>(() => {
+  const [state, rawSetState] = useState<DemoState>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_KEY);
-      return reconcileLifecycle(saved ? migrateState(decodeStoredDemoState(JSON.parse(saved))) : initialState);
+      if(saved&&!localStorage.getItem("preora-before-backend-v1"))localStorage.setItem("preora-before-backend-v1",saved);
+      const loaded=saved ? migrateState(decodeStoredDemoState(JSON.parse(saved))) : initialState;
+      return stampOrderChanges(loaded,reconcileLifecycle(loaded),new Date().toISOString());
     } catch {
       return initialState;
     }
   });
+  const setState: Dispatch<SetStateAction<DemoState>> = useCallback(action => rawSetState(previous => { const next=typeof action==='function'?action(previous):action; return stampOrderChanges(previous,next,new Date().toISOString()); }),[]);
   const receivedStorage = useRef('');
   const [authLoading, setAuthLoading] = useState(true);
   const [persistenceError,setPersistenceError]=useState("");
+  const serverRevision=useRef(0),serverIdentity=useRef('');
+  const [serverReady,setServerReady]=useState(false),[serverBusy,setServerBusy]=useState(false);
   useEffect(() => {
     let active = true;
     authApi("me").then((result) => { if (active) setState((current) => result.user ? mergeAccount(current, result.user) : { ...current, session: null }); }).catch(() => { if (active) setState((current) => ({ ...current, session: null })); }).finally(() => { if (active) setAuthLoading(false); });
     return () => { active = false; };
   }, []);
   useEffect(() => {
-    try { const encoded=encodeStoredDemoState({...state,session:null}); if(encoded!==receivedStorage.current && encoded!==localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY,encoded); receivedStorage.current=''; setPersistenceError(''); }
+    if(serverReady||!authLoading)return;
+    try { const encoded=encodeStoredDemoState({...state,session:null}); if(encoded!==receivedStorage.current && encoded!==localStorage.getItem(STORAGE_KEY)) localStorage.setItem(STORAGE_KEY,encoded); receivedStorage.current=''; }
     catch { setPersistenceError('Không lưu được dữ liệu mô phỏng trong trình duyệt. Hãy xuất dữ liệu hoặc giải phóng bộ nhớ trước khi đóng trang.'); }
-  }, [state]);
+  }, [state,serverReady,authLoading]);
   useEffect(() => {
-    if (state.demoNow) return;
+    if (state.demoNow || serverReady) return;
     const timer = window.setInterval(() => setState((current) => reconcileLifecycle(current)), 60_000);
     return () => window.clearInterval(timer);
-  }, [state.demoNow]);
+  }, [state.demoNow,serverReady]);
 
   useEffect(() => {
     const receive = (event: StorageEvent) => {
+      if (serverRevision.current) return;
       if (event.key !== STORAGE_KEY || !event.newValue || event.newValue !== localStorage.getItem(STORAGE_KEY)) return;
       try {
         const incoming = migrateState(decodeStoredDemoState(JSON.parse(event.newValue)));
@@ -422,13 +443,34 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener('storage',receive);
   },[]);
 
+  const identity=state.session?.userId||'guest';serverIdentity.current=identity;
+  const applyServer=useCallback((data:LifecycleState)=>{if(!data.state||data.revision<serverRevision.current)return;serverRevision.current=data.revision;rawSetState(old=>({...old,...data.state!,session:old.session,users:[...data.state!.users.filter(u=>u.id!==old.session?.userId),...old.users.filter(u=>u.id===old.session?.userId)]}));setServerReady(true);},[]);
+  const refreshLifecycle=useCallback(async()=>{const owner=serverIdentity.current;const d=await lifecycle<LifecycleState>('/state');if(owner===serverIdentity.current)applyServer(d);},[applyServer]);
+  useEffect(()=>{if(authLoading)return;try{if(!localStorage.getItem("preora-before-backend-v1")){const old=localStorage.getItem(STORAGE_KEY);if(old)localStorage.setItem("preora-before-backend-v1",old);}}catch{}let active=true;serverRevision.current=0;setServerReady(false);const owner=identity;const poll=async()=>{try{const d=await lifecycle<LifecycleState>('/state?since='+serverRevision.current);if(active&&owner===serverIdentity.current){if(d.state)applyServer(d);}}catch{if(active)setPersistenceError('Chưa kết nối dữ liệu nghiệp vụ backend. Các thay đổi nghiệp vụ cần backend hoạt động.');}};void poll();const t=setInterval(poll,10000);return()=>{active=false;clearInterval(t);};},[identity,authLoading,applyServer]);
+  const runLifecycle=useCallback(async(action:string,payload:Record<string,unknown>)=>{
+    if(!serverRevision.current)throw new Error('Đang kết nối dữ liệu. Vui lòng thử lại.');
+    setServerBusy(true);const owner=serverIdentity.current;
+    try{
+      let d:LifecycleState|undefined;
+      for(let attempt=0;attempt<2;attempt++){
+        if(owner!==serverIdentity.current)throw new Error('Tài khoản đã thay đổi. Vui lòng thực hiện lại.');
+        try{d=await lifecycle<LifecycleState>('/commands',{action,payload,revision:serverRevision.current});break;}
+        catch(e){if(attempt===0&&e instanceof LifecycleError&&e.revisionConflict){await refreshLifecycle();continue;}throw e;}
+      }
+      if(d&&owner===serverIdentity.current){applyServer(d);setPersistenceError('');}
+      return d?.result;
+    }catch(e){setPersistenceError((e as Error).message);try{await refreshLifecycle();}catch{}throw e;}
+    finally{setServerBusy(false);}
+  },[applyServer,refreshLifecycle]);
+  const remote=(action:string,payload:Record<string,unknown>)=>{void runLifecycle(action,payload).catch(e=>setPersistenceError(e.message));};
   const value = useMemo<StoreValue>(() => ({
-    state,
+    state,serverReady,serverBusy,runLifecycle,refreshLifecycle,
     async setSession(_role, _userId) {
       await authApi("logout", {});
       setState((current) => ({ ...current, session: null }));
     },
     importShoppingOrders(orders) {
+      if(serverReady){void refreshLifecycle().catch(()=>{});return;}
       setState(current => {
         const known = new Set(current.orders.map(o => o.id));
         const fresh = orders.filter(o => !known.has(o.id));
@@ -442,6 +484,7 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     authLoading,
     persistenceError,
     setSalesSimulationEnabled(enabled) {
+      if(serverReady){setPersistenceError("Doanh số backend tăng theo đơn hàng, không tự tạo giao dịch mô phỏng.");return;}
       if (state.session?.role !== 'admin') return;
       setState(current => {
         const paused = advanceDemoSales({...current,salesSimulationEnabled:false}, isoDay(getEffectiveNow(current)));
@@ -449,6 +492,7 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       });
     },
     setDemoNow(value) {
+      if(serverReady)throw new Error("Dữ liệu nghiệp vụ backend dùng thời gian thực. Không thay bằng đồng hồ mô phỏng.");
       const requested = value ? new Date(value) : new Date();
       if (!Number.isFinite(requested.getTime())) throw new Error('Ngày mô phỏng không hợp lệ.');
       const minimum = state.campaigns.reduce((latest,c)=>c.salesSimulation && c.salesSimulation.anchorDate>latest ? c.salesSimulation.anchorDate : latest,'');
@@ -459,45 +503,12 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
     syncCampaignLifecycle() {
       setState((current) => reconcileLifecycle(current));
     },
-    createProduct(input) {
-      if (state.session?.role !== "seller") throw new Error("Chỉ người bán được tạo sản phẩm.");
-      const product: StoreProduct = { ...input, id: Math.max(0, ...state.products.map((item) => item.id)) + 1, sellerId: state.session.userId, image: initialProducts[0].image, status: "Bản nháp" };
-      setState((current) => ({ ...current, products: [...current.products, product] }));
-      return product;
-    },
-    createCampaign(input, submit) {
-      if (state.session?.role !== "seller") throw new Error("Chỉ người bán được tạo chiến dịch.");
-      const product = state.products.find((item) => item.id === input.productId);
-      if (!product || product.sellerId !== state.session.userId) throw new Error("Bạn không sở hữu sản phẩm đã chọn.");
-      const campaign: StoreCampaign = { ...input, id: makeId("CD"), sellerId: state.session.userId, currentOrders: 0, status: submit ? "Chờ duyệt" : "Bản nháp" };
-      setState((current) => ({ ...current, campaigns: [...current.campaigns, campaign] }));
-      return campaign;
-    },
-    approveCampaign(id) {
-      if (state.session?.role !== "admin") return;
-      const today = isoDay(getEffectiveNow(state));
-      setState((current) => ({ ...current, campaigns: current.campaigns.map((campaign) => campaign.id === id ? { ...campaign, status: campaign.startDate <= today ? "Đang hoạt động" : "Đã lên lịch", rejectionReason: undefined } : campaign) }));
-    },
-    rejectCampaign(id, reason) {
-      if (state.session?.role !== "admin") return;
-      setState((current) => ({ ...current, campaigns: current.campaigns.map((campaign) => campaign.id === id ? { ...campaign, status: "Bị từ chối", rejectionReason: reason } : campaign) }));
-    },
-    activateCampaign(id) {
-      if (state.session?.role !== "seller") return;
-      setState((current) => ({ ...current, campaigns: current.campaigns.map((campaign) => campaign.id === id && campaign.sellerId === current.session?.userId && campaign.status === "Đã lên lịch" && campaign.startDate <= isoDay(getEffectiveNow(current)) ? { ...campaign, status: "Đang hoạt động" } : campaign) }));
-    },
-    cancelCampaign(id) {
-      if (state.session?.role !== "seller") return;
-      setState((current) => ({
-        ...current,
-        campaigns: current.campaigns.map((campaign) => campaign.id === id && campaign.sellerId === current.session?.userId ? { ...campaign, status: "Đã hủy" } : campaign),
-        orders: current.orders.map((order) => order.campaignId === id && order.sellerId === current.session?.userId ? { ...order, orderStatus: "Đang hoàn tiền", paymentStatus: "Đang hoàn tiền" } : order),
-        payments: current.payments.map((payment) => {
-          const order = current.orders.find((item) => item.id === payment.orderId);
-          return order?.campaignId === id ? { ...payment, status: "Đang hoàn tiền" } : payment;
-        }),
-      }));
-    },
+    async createProduct(input) {return await runLifecycle('product.create',input);},
+    async createCampaign(input,submit) {return await runLifecycle('campaign.create',{...input,submit});},
+    approveCampaign(id) {remote("campaign.approve",{id});},
+    rejectCampaign(id, reason) {remote("campaign.reject",{id,reason});},
+    activateCampaign(id) {remote("campaign.activate",{id});},
+    cancelCampaign(id) {remote("campaign.cancel",{id});},
     async requestForecast(campaignId) {
       const campaign = state.campaigns.find((item) => item.id === campaignId);
       if (!campaign || state.session?.role !== "seller" || campaign.sellerId !== state.session.userId) throw new Error("Bạn không có quyền dự báo chiến dịch này.");
@@ -518,64 +529,12 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       setState((current) => ({ ...current, forecasts: [forecast, ...current.forecasts] }));
       return forecast;
     },
-    finishCampaign(id) {
-      if (state.session?.role !== "seller") return;
-      setState((current) => {
-        const campaign = current.campaigns.find((item) => item.id === id);
-        if (!campaign || campaign.sellerId !== current.session?.userId || getRemainingDays(campaign, current) > 0) return current;
-        const success = evaluateCampaignOutcome(campaign) === "Thành công";
-        return {
-          ...current,
-          campaigns: current.campaigns.map((item) => item.id === id ? { ...item, status: success ? "Thành công" : "Không đạt MOQ" } : item),
-          orders: current.orders.map((order) => order.campaignId !== id ? order : { ...order, orderStatus: success ? "Chờ kết quả chiến dịch" : "Đang hoàn tiền", paymentStatus: success ? order.paymentStatus : "Đang hoàn tiền" }),
-          payments: current.payments.map((payment) => {
-            const order = current.orders.find((item) => item.id === payment.orderId);
-            return order?.campaignId === id && !success ? { ...payment, status: "Đang hoàn tiền" } : payment;
-          }),
-        };
-      });
-    },
-    createProductionRequest(campaignId) {
-      if (state.session?.role !== "seller") return;
-      setState((current) => {
-        const campaign = current.campaigns.find((item) => item.id === campaignId);
-        if (!campaign || campaign.sellerId !== current.session?.userId || campaign.status !== "Thành công" || campaign.currentOrders < campaign.moq || current.productionRequests.some((item) => item.campaignId === campaignId)) return current;
-        const product = current.products.find((item) => item.id === campaign.productId);
-        const completion = new Date(getEffectiveNow(current).getTime() + (product?.manufacturingDays || 30) * DAY);
-        const request: ProductionRequest = { id: makeId("MFG"), campaignId, sellerId: campaign.sellerId, partnerId: "partner-demo", quantity: campaign.currentOrders, status: "Chờ tiếp nhận", progress: 0, estimatedCompletion: isoDay(completion), updatedAt: getEffectiveNow(current).toISOString() };
-        return { ...current, productionRequests: [request, ...current.productionRequests] };
-      });
-    },
-    updateProduction(id, progress, status) {
-      if (state.session?.role !== "partner") return;
-      setState((current) => {
-        const request = current.productionRequests.find((item) => item.id === id);
-        if (!request || request.partnerId !== current.session?.userId) return current;
-        const allowed: Record<ProductionRequest["status"], ProductionRequest["status"][]> = {
-          "Chờ tiếp nhận": ["Đã tiếp nhận"],
-          "Đã tiếp nhận": ["Đang sản xuất"],
-          "Đang sản xuất": ["Đang sản xuất", "Đang vận chuyển"],
-          "Đang vận chuyển": ["Đang vận chuyển", "Hoàn thành"],
-          "Hoàn thành": ["Hoàn thành"],
-        };
-        if (!allowed[request.status].includes(status) || !Number.isInteger(progress) || progress < request.progress || progress > 100) return current;
-        if (status === "Đang vận chuyển" && progress < 100) return current;
-        const orderStatus = status === "Hoàn thành" ? "Đã giao" : status === "Đang vận chuyển" ? "Đang vận chuyển" : "Đang sản xuất";
-        return {
-          ...current,
-          productionRequests: current.productionRequests.map((item) => item.id === id ? { ...item, progress: Math.max(item.progress, Math.min(progress, 100)), status, updatedAt: getEffectiveNow(current).toISOString(), history: [...(item.history || [{status:item.status,progress:item.progress,at:item.updatedAt}]),{status,progress,at:getEffectiveNow(current).toISOString()}] } : item),
-          orders: current.orders.map((order) => order.campaignId === request.campaignId && !["Đã hoàn tiền", "Đã hủy"].includes(order.orderStatus) ? { ...order, orderStatus } : order),
-        };
-      });
-    },
-    completeRefund(orderId) {
-      if (state.session?.role !== "admin") return;
-      setState((current) => ({
-        ...current,
-        orders: current.orders.map((order) => order.id === orderId ? { ...order, orderStatus: "Đã hoàn tiền", paymentStatus: "Đã hoàn tiền" } : order),
-        payments: current.payments.map((payment) => payment.orderId === orderId ? { ...payment, status: "Đã hoàn tiền" } : payment),
-      }));
-    },
+    finishCampaign(id) {remote("campaign.finish",{id});},
+    createProductionRequest(campaignId) {window.location.hash="seller-lifecycle?campaign="+encodeURIComponent(campaignId);},
+    async changeProductionPlan(id,date,reason) {await runLifecycle('production.plan',{id,date,reason});},
+    updateProduction(id, progress, status) {remote("production.update",{id,progress,status});},
+    completeRefund(orderId) {remote("refund.complete",{id:orderId});},
+    setSellerVerification(id,verified) {if(state.session?.role!=='admin')return;setState(current=>({...current,sellers:current.sellers.map(s=>s.id===id?{...s,verified}:s)}));},
     updateProfile(name, email, notificationEmail) {
       setState((current) => {
         if (!current.session) return current;
@@ -583,13 +542,14 @@ export function DemoStoreProvider({ children }: { children: React.ReactNode }) {
       });
     },
     resetDemo() {
+      if(serverReady){setPersistenceError("Không đặt lại cơ sở dữ liệu backend bằng nút xóa cache demo.");return;}
       localStorage.removeItem(STORAGE_KEY);
       localStorage.removeItem(LEGACY_KEY);
       setState(initialState);
     },
-  }), [state, authLoading, persistenceError]);
+  }), [state, authLoading, persistenceError,serverReady,serverBusy,runLifecycle,refreshLifecycle]);
 
-  return <DemoContext.Provider value={value}>{children}</DemoContext.Provider>;
+  return <DemoContext.Provider value={value}>{children}{persistenceError&&<div role="alert" className="fixed bottom-4 left-4 right-4 z-50 mx-auto max-w-xl rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">{persistenceError}<button aria-label="Đóng lỗi đồng bộ" onClick={()=>setPersistenceError("")} className="float-right ml-3">×</button></div>}</DemoContext.Provider>;
 }
 
 export function useDemoStore() {
