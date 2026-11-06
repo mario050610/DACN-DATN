@@ -2,17 +2,13 @@ services:
   - type: web
     name: preora-demo
     runtime: docker
-    plan: 1c-2g
+    plan: free
     region: singapore
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /api/health
     numInstances: 1
     autoDeployTrigger: off
-    disk:
-      name: preora-demo-data
-      mountPath: /var/data
-      sizeGB: 5
     envVars:
       - key: AUTH_DATABASE_PATH
         value: /var/data/accounts.sqlite3

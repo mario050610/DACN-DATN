@@ -9,17 +9,20 @@ Link bắt đầu triển khai:
 
 https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fmario050610%2FDACN-DATN
 
-Blueprint yêu cầu **web service có phí, 1 CPU / 2 GB RAM (`1c-2g`) và ổ lưu 5 GB**.
-Xem tổng chi phí hiện tại trong Render trước khi xác nhận. Việc đưa file này lên GitHub
-không tạo tài nguyên và không tự đăng ký gói trả phí. Không chọn Free cho cấu hình này:
-Free ngủ khi không có truy cập và không hỗ trợ persistent disk.
+Blueprint mặc định dùng **Render Free**, không khai báo disk hoặc dịch vụ trả phí.
+Free ngủ sau 15 phút không có truy cập. Database SQLite, upload và kết quả model nằm
+trên filesystem tạm nên mất khi restart, redeploy hoặc service ngủ. Đây là demo dùng thử,
+chưa có lưu trữ lâu dài; không nhập dữ liệu thật. Train AI bị giới hạn bởi RAM/CPU của
+gói Free và có thể không đủ cho dataset lớn. Cấu hình trả phí 1 CPU / 2 GB RAM với ổ
+lưu 5 GB được giữ riêng tại `infra/render-persistent.yaml`, chỉ dùng khi chủ tài khoản
+chủ động chọn và chấp nhận chi phí. Đẩy code không tự tạo tài nguyên Render.
 
 ## Các bước của chủ tài khoản
 
 1. Đăng ký/đăng nhập Render bằng tài khoản của bạn.
 2. Mở link triển khai trên; nếu repo private, cấp Render quyền đọc riêng repo DACN-DATN.
-3. Kiểm tra service `preora-demo`, region Singapore, compute `1c-2g`, disk 5 GB.
-4. Xem giá, thêm phương thức thanh toán nếu Render yêu cầu và tự xác nhận triển khai.
+3. Kiểm tra service `preora-demo`, region Singapore, compute **Free**, không có disk.
+4. Chọn Deploy. Nếu Render yêu cầu nâng cấp trả phí, dừng lại và kiểm tra plan.
 5. Chờ build/deploy thành công; sao chép URL chính thức trong dashboard.
 
 URL dự kiến có dạng `https://preora-demo.onrender.com`. Nếu tên đã được sử dụng,
@@ -39,16 +42,19 @@ Nếu gắn domain riêng, đặt `PUBLIC_ORIGIN=https://ten-mien-cua-ban` và r
 - `autoDeployTrigger: off`: cập nhật GitHub chưa tự triển khai lại; chọn Manual Deploy
   trong dashboard khi cần xuất bản phiên bản mới.
 
-## Dữ liệu bền vững
+## Vị trí dữ liệu
 
-| Nội dung | Vị trí trên persistent disk |
+Với `render.yaml` Free, các vị trí dưới đây là **tạm**, không được đảm bảo giữ qua
+restart/redeploy. Chỉ cấu hình `infra/render-persistent.yaml` gắn disk mới lưu lâu dài.
+
+| Nội dung | Vị trí trong container (disk chỉ có ở cấu hình trả phí) |
 |---|---|
 | Tài khoản, phiên đăng nhập, hồ sơ, đơn hàng, vòng đời, ảnh upload, xác minh | `/var/data/accounts.sqlite3` |
 | Phiên train, dataset lịch sử upload, model/kết quả/log theo job và tracker | `/var/data/ai-training/` |
 
 Container không chứa `.env`, database local, giấy tờ upload, raw dataset hay model cũ.
 Lần đầu chạy tạo database demo mới từ seed có sẵn; không sao chép database trên máy.
-Không xóa disk khi redeploy. Sao lưu dữ liệu bằng SQLite online backup và sao lưu thư mục
+Với bản trả phí: không xóa disk khi redeploy. Sao lưu bằng SQLite online backup và sao lưu thư mục
 training trước các thay đổi lớn; code migration không thay thế cho bản sao lưu.
 
 ## Tài khoản và AI demo
@@ -73,7 +79,8 @@ Thanh toán vẫn là mô phỏng của prototype.
 - `/` hiện PREORA; `/api/health` trả `status: ok`.
 - Đăng nhập các vai trò, hồ sơ, giỏ hàng/đặt trước, partner chỉ thấy lệnh được giao.
 - Train một campaign bằng chế độ demo; kiểm tra job thành công và xem kết quả.
-- Khởi động lại service rồi kiểm tra dữ liệu vừa tạo và kết quả train còn tồn tại.
+- Với bản trả phí có disk: khởi động lại và kiểm tra dữ liệu/kết quả train còn tồn tại.
+- Với bản Free: xác nhận seed demo được tạo lại sau restart; không cam kết giữ dữ liệu.
 - Kiểm tra cửa sổ ẩn danh và mobile trước khi gửi link cho giảng viên.
 
 ## Chạy Docker để kiểm tra local
@@ -95,6 +102,8 @@ Render vẫn dùng `AUTH_COOKIE_SECURE=true`.
   Python worker thật đều thành công; không mock API hoặc kết quả model.
 - Khởi động lại container với cùng volume: tài khoản mới và kết quả train vẫn còn.
 - Công cụ kiểm tra trình duyệt bị timeout; chưa xác minh trực quan bản hosting.
+- Các kiểm tra persistence ở trên dùng Docker volume riêng, không chứng minh gói Free
+  lưu dữ liệu lâu dài hoặc train vừa giới hạn RAM. Gói Free chưa được chạy live.
 - Chưa tạo tài nguyên Render và chưa có URL live: cần chủ tài khoản đăng nhập và
   xác nhận gói dịch vụ. Kiểm tra live/redeploy trên Render vẫn phải làm sau bước này.
 
