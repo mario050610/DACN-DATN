@@ -1,5 +1,13 @@
 # PREORA — AI-Integrated Pre-order E-commerce
 
+## Web demo trên Render
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fmario050610%2FDACN-DATN)
+
+Đã có cấu hình frontend + backend + worker AI và persistent disk. Blueprint dùng
+**gói trả phí 1 CPU / 2 GB và disk 5 GB**; chủ tài khoản xem giá và tự xác nhận trên Render.
+Link trên mở trình triển khai, chưa phải website live. Xem [hướng dẫn hosting](docs/DEPLOY_RENDER.md).
+
 Prototype thương mại điện tử cho sản phẩm đặt trước khi sản xuất. Phạm vi báo cáo hiện tại: **Design – Data preparation – Technologies**. Hiện trạng đối chiếu ngày 19/10/2026.
 
 ## Chạy trên Windows
